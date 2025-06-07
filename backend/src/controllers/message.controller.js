@@ -84,7 +84,9 @@ export const deleteMessage = async (req, res) => {
       message.senderId.toString() !== userId.toString() &&
       message.receiverId.toString() !== userId.toString()
     ) {
-      return res.status(403).json({ error: "Unauthorized to delete this message" });
+      return res
+        .status(403)
+        .json({ error: "Unauthorized to delete this message" });
     }
     if (message.image) {
       const publicId = message.image.split("/").pop().split(".")[0];
@@ -93,9 +95,57 @@ export const deleteMessage = async (req, res) => {
 
     await Message.findByIdAndDelete(messageId);
 
+    const receiverSocketId = getReceiverSocketId(message.receiverId.toString());
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("deleteMessage", { _id: messageId });
+    }
+
     res.status(200).json({ message: "Message deleted successfully" });
   } catch (error) {
     console.log("Error in deleteMessage controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const editMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user._id;
+    const { text, image } = req.body;
+
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+    if (message.senderId.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ error: "Unauthorized to edit this message" });
+    }
+
+    let imageUrl = message.image;
+    if (image && image !== message.image) {
+      if (message.image) {
+        const publicId = message.image.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
+      const uploadResponse = await cloudinary.uploader.upload(image);
+      imageUrl = uploadResponse.secure_url;
+    }
+
+    message.text = text !== undefined ? text : message.text;
+    message.image = imageUrl;
+    await message.save();
+
+    const receiverSocketId = getReceiverSocketId(message.receiverId.toString());
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("editMessage", message);
+    }
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.log("Error in editMessage controller: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
