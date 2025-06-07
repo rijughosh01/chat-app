@@ -2,10 +2,13 @@ import { useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { Image, Send, X } from "lucide-react";
 import toast from "react-hot-toast";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
 
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const fileInputRef = useRef(null);
   const { sendMessage } = useChatStore();
 
@@ -38,7 +41,6 @@ const MessageInput = () => {
         image: imagePreview,
       });
 
-      
       setText("");
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -48,7 +50,7 @@ const MessageInput = () => {
   };
 
   return (
-    <div className="p-4 w-full">
+    <div className="p-4 w-full relative">
       {imagePreview && (
         <div className="mb-3 flex items-center gap-2">
           <div className="relative">
@@ -70,7 +72,29 @@ const MessageInput = () => {
       )}
 
       <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-        <div className="flex-1 flex gap-2">
+        <div className="flex-1 flex gap-2 relative">
+          <button
+            type="button"
+            className="btn btn-circle"
+            onClick={() => setShowEmojiPicker((v) => !v)}
+            tabIndex={-1}
+          >
+            <span role="img" aria-label="emoji">
+              😊
+            </span>
+          </button>
+          {showEmojiPicker && (
+            <div className="absolute bottom-12 left-0 z-50">
+              <Picker
+                data={data}
+                onEmojiSelect={(emoji) => {
+                  setText((prev) => prev + emoji.native);
+                  setShowEmojiPicker(false);
+                }}
+                theme="auto"
+              />
+            </div>
+          )}
           <input
             type="text"
             className="w-full input input-bordered rounded-lg input-sm sm:input-md"

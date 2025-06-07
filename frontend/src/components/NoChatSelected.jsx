@@ -1,4 +1,4 @@
-import { MessageSquare } from "lucide-react";
+import { MessagesSquare } from "lucide-react";
 
 const NoChatSelected = () => {
   return (
@@ -10,14 +10,14 @@ const NoChatSelected = () => {
               className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center
              justify-center animate-bounce"
             >
-              <MessageSquare className="w-8 h-8 text-primary " />
+              <MessagesSquare className="w-10 h-10 text-primary " />
             </div>
           </div>
         </div>
 
         <h2 className="text-2xl font-bold">Welcome to NexChat!</h2>
         <p className="text-base-content/60">
-          Select a conversation from the sidebar to start chatting
+          Your conversations live here. Select one to get started.
         </p>
       </div>
     </div>
