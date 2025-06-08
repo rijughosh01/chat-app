@@ -29,6 +29,7 @@ const ChatContainer = () => {
     unsubscribeFromMessages,
     deleteMessage,
     editMessage,
+    markMessagesAsSeen,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
@@ -38,16 +39,19 @@ const ChatContainer = () => {
   const [editValue, setEditValue] = useState("");
 
   useEffect(() => {
+    if (!selectedUser?._id) return;
     getMessages(selectedUser._id);
-
     subscribeToMessages();
+
+    markMessagesAsSeen(selectedUser._id);
 
     return () => unsubscribeFromMessages();
   }, [
-    selectedUser._id,
+    selectedUser?._id,
     getMessages,
     subscribeToMessages,
     unsubscribeFromMessages,
+    markMessagesAsSeen,
   ]);
 
   useEffect(() => {
@@ -177,6 +181,19 @@ const ChatContainer = () => {
                   {message.text && <p>{message.text}</p>}
                 </>
               )}
+
+              {message.senderId === authUser._id && (
+                <div className="text-xs mt-1 flex items-center gap-1">
+                  {message.seen ? (
+                    <span className="text-blue-500">Seen</span>
+                  ) : message.delivered ? (
+                    <span className="text-gray-400">Delivered</span>
+                  ) : (
+                    <span className="text-gray-400">Sent</span>
+                  )}
+                </div>
+              )}
+              
             </div>
           </div>
         ))}

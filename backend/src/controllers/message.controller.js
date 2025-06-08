@@ -49,16 +49,20 @@ export const sendMessage = async (req, res) => {
       imageUrl = uploadResponse.secure_url;
     }
 
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    const delivered = !!receiverSocketId;
+
     const newMessage = new Message({
       senderId,
       receiverId,
       text,
       image: imageUrl,
+      delivered, 
+      seen: false, 
     });
 
     await newMessage.save();
 
-    const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
@@ -146,6 +150,25 @@ export const editMessage = async (req, res) => {
     res.status(200).json(message);
   } catch (error) {
     console.log("Error in editMessage controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const markMessagesAsSeen = async (req, res) => {
+  try {
+    const { userId } = req.body; 
+    const myId = req.user._id;
+    await Message.updateMany(
+      { senderId: userId, receiverId: myId, seen: false },
+      { $set: { seen: true } }
+    );
+    const senderSocketId = getReceiverSocketId(userId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messagesSeen", { by: myId });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
 };

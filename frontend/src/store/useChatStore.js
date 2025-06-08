@@ -76,8 +76,23 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  markMessagesAsSeen: async (userId) => {
+    try {
+      await axiosInstance.post("/messages/seen", { userId });
+      set({
+        messages: get().messages.map((msg) =>
+          msg.senderId === userId ? { ...msg, seen: true } : msg
+        ),
+      });
+    } catch (error) {
+      toast.error(
+        error.response?.data?.error || "Failed to mark messages as seen"
+      );
+    }
+  },
+
   subscribeToMessages: () => {
-    const { selectedUser } = get();
+    const { selectedUser, markMessagesAsSeen } = get();
     if (!selectedUser) return;
 
     const socket = useAuthStore.getState().socket;
@@ -90,6 +105,9 @@ export const useChatStore = create((set, get) => ({
       set({
         messages: [...get().messages, newMessage],
       });
+      if (!newMessage.seen) {
+        markMessagesAsSeen(selectedUser._id);
+      }
     });
 
     socket.on("deleteMessage", (deleted) => {
@@ -102,6 +120,14 @@ export const useChatStore = create((set, get) => ({
       set({
         messages: get().messages.map((msg) =>
           msg._id === editedMessage._id ? editedMessage : msg
+        ),
+      });
+    });
+
+    socket.on("messagesSeen", ({ by }) => {
+      set({
+        messages: get().messages.map((msg) =>
+          msg.receiverId === by ? { ...msg, seen: true } : msg
         ),
       });
     });
