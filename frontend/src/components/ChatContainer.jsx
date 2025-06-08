@@ -30,6 +30,7 @@ const ChatContainer = () => {
     deleteMessage,
     editMessage,
     markMessagesAsSeen,
+    typingUsers,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
@@ -69,6 +70,9 @@ const ChatContainer = () => {
       </div>
     );
   }
+
+  const isOtherUserTyping =
+    selectedUser && typingUsers && typingUsers.includes(selectedUser._id);
 
   return (
     <div className="flex-1 flex flex-col overflow-auto">
@@ -193,10 +197,17 @@ const ChatContainer = () => {
                   )}
                 </div>
               )}
-              
             </div>
           </div>
         ))}
+
+        {isOtherUserTyping && (
+          <div className="chat chat-start">
+            <div className="chat-bubble bg-base-200 text-base-content/70">
+              <span>Typing...</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <MessageInput />
