@@ -19,7 +19,7 @@ app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "chat-app-liard-omega-74.vercel.app",
     credentials: true,
   })
 );
