@@ -28,6 +28,9 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the NexChatApp backend!");
+});
 server.listen(PORT, () => {
   console.log("server is running on PORT:" + PORT);
   connectDB();
