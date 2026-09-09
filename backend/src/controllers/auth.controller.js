@@ -2,6 +2,7 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
+import { io } from "../lib/socket.js";
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -38,6 +39,8 @@ export const signup = async (req, res) => {
         fullName: newUser.fullName,
         email: newUser.email,
         profilePic: newUser.profilePic,
+        showOnlineStatus: newUser.showOnlineStatus !== false,
+        lastSeen: newUser.lastSeen,
         createdAt: newUser.createdAt,
       });
     } else {
@@ -65,11 +68,16 @@ export const login = async (req, res) => {
 
     generateToken(user._id, res);
 
+    user.lastSeen = new Date();
+    await user.save();
+
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
+      showOnlineStatus: user.showOnlineStatus !== false,
+      lastSeen: user.lastSeen,
       createdAt: user.createdAt,
     });
   } catch (error) {
@@ -117,5 +125,28 @@ export const checkAuth = (req, res) => {
   } catch (error) {
     console.log("Error in checkAuth controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const updatePrivacySettings = async (req, res) => {
+  try {
+    const { showOnlineStatus } = req.body;
+    const userId = req.user._id;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { showOnlineStatus: Boolean(showOnlineStatus) },
+      { new: true }
+    ).select("-password");
+
+    io.emit("userPrivacyChanged", {
+      userId,
+      showOnlineStatus: updatedUser.showOnlineStatus !== false,
+    });
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.log("Error in updatePrivacySettings controller", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

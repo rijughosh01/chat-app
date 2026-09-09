@@ -1,3 +1,95 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Sleek WhatsApp Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.45);
+}
+
+/* WhatsApp Message Bubbles: Perfect Theme-Aware Contrast */
+.wa-bubble-outgoing {
+  background-color: #d9fdd3;
+  color: #111b21;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+}
+
+.wa-bubble-incoming {
+  background-color: #ffffff;
+  color: #111b21;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Dark Mode Overrides for Dark Themes */
+[data-theme="dark"] .wa-bubble-outgoing,
+[data-theme="night"] .wa-bubble-outgoing,
+[data-theme="black"] .wa-bubble-outgoing,
+[data-theme="luxury"] .wa-bubble-outgoing,
+[data-theme="dracula"] .wa-bubble-outgoing,
+[data-theme="synthwave"] .wa-bubble-outgoing,
+[data-theme="halloween"] .wa-bubble-outgoing,
+[data-theme="forest"] .wa-bubble-outgoing,
+[data-theme="aqua"] .wa-bubble-outgoing,
+[data-theme="coffee"] .wa-bubble-outgoing,
+[data-theme="dim"] .wa-bubble-outgoing,
+[data-theme="sunset"] .wa-bubble-outgoing {
+  background-color: #005c4b;
+  color: #e9edef;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .wa-bubble-incoming,
+[data-theme="night"] .wa-bubble-incoming,
+[data-theme="black"] .wa-bubble-incoming,
+[data-theme="luxury"] .wa-bubble-incoming,
+[data-theme="dracula"] .wa-bubble-incoming,
+[data-theme="synthwave"] .wa-bubble-incoming,
+[data-theme="halloween"] .wa-bubble-incoming,
+[data-theme="forest"] .wa-bubble-incoming,
+[data-theme="aqua"] .wa-bubble-incoming,
+[data-theme="coffee"] .wa-bubble-incoming,
+[data-theme="dim"] .wa-bubble-incoming,
+[data-theme="sunset"] .wa-bubble-incoming {
+  background-color: #202c33;
+  color: #e9edef;
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+/* Subtle WhatsApp Chat Wallpaper */
+.wa-wallpaper {
+  background-color: rgba(128, 128, 128, 0.04);
+  background-image: radial-gradient(rgba(128, 128, 128, 0.15) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Micro-Animation for message popping */
+@keyframes waMessageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-message-in {
+  animation: waMessageIn 0.15s ease-out forwards;
+}

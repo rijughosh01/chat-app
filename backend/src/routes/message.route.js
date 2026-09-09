@@ -7,6 +7,7 @@ import {
   deleteMessage,
   editMessage,
   markMessagesAsSeen,
+  reactToMessage,
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.post("/send/:id", protectRoute, sendMessage);
 router.delete("/delete/:messageId", protectRoute, deleteMessage);
 router.patch("/edit/:messageId", protectRoute, editMessage);
 router.post("/seen", protectRoute, markMessagesAsSeen);
+router.post("/react/:messageId", protectRoute, reactToMessage);
 
 export default router;

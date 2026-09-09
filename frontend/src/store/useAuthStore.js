@@ -85,6 +85,19 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  updatePrivacySettings: async (settings) => {
+    try {
+      const res = await axiosInstance.put("/auth/update-privacy", settings);
+      set({ authUser: res.data });
+      toast.success("Privacy settings updated");
+    } catch (error) {
+      console.log("error in updatePrivacySettings:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to update privacy settings"
+      );
+    }
+  },
+
   connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;

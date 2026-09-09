@@ -38,14 +38,27 @@ const Navbar = () => {
 
             {authUser && (
               <>
-                <Link to={"/profile"} className={`btn btn-sm gap-2`}>
-                  <CircleUser className="size-5" />
-                  <span className="hidden sm:inline">Profile</span>
+                <Link
+                  to={"/profile"}
+                  className="flex items-center gap-2 p-1.5 hover:bg-base-200 rounded-lg transition-colors"
+                  title="Your Profile"
+                >
+                  <img
+                    src={authUser.profilePic || "/avatar.png"}
+                    alt="Profile"
+                    className="size-7 rounded-full object-cover border border-base-300"
+                  />
+                  <span className="text-sm font-medium hidden sm:inline">
+                    {authUser.fullName}
+                  </span>
                 </Link>
 
-                <button className="flex gap-2 items-center" onClick={logout}>
-                  <LogOut className="size-5" />
-                  {/* <span className="hidden sm:inline"></span> */}
+                <button
+                  className="btn btn-sm btn-ghost btn-circle text-error/80 hover:text-error hover:bg-error/10 transition-colors"
+                  onClick={logout}
+                  title="Logout"
+                >
+                  <LogOut className="size-4" />
                 </button>
               </>
             )}

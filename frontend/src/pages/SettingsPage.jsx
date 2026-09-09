@@ -1,6 +1,7 @@
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
-import { Send } from "lucide-react";
+import { useAuthStore } from "../store/useAuthStore";
+import { Send, ShieldCheck } from "lucide-react";
 
 const PREVIEW_MESSAGES = [
   { id: 1, content: "Hey! How's it going?", isSent: false },
@@ -13,9 +14,10 @@ const PREVIEW_MESSAGES = [
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
+  const { authUser, updatePrivacySettings } = useAuthStore();
 
   return (
-    <div className="h-screen container mx-auto px-4 pt-20 max-w-5xl">
+    <div className="min-h-screen container mx-auto px-4 pt-20 pb-12 max-w-5xl">
       <div className="space-y-6">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold">Theme</h2>
@@ -29,16 +31,16 @@ const SettingsPage = () => {
             <button
               key={t}
               className={`
-                group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors
-                ${theme === t ? "bg-base-200" : "hover:bg-base-200/50"}
+                group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all
+                ${theme === t ? "bg-base-200 ring-2 ring-primary shadow-sm" : "hover:bg-base-200/50"}
               `}
               onClick={() => setTheme(t)}
             >
               <div
-                className="relative h-8 w-full rounded-md overflow-hidden"
+                className="relative h-8 w-full rounded-md overflow-hidden shadow-xs border border-base-content/10"
                 data-theme={t}
               >
-                <div className="absolute inset-0 grid grid-cols-4 gap-px p-1">
+                <div className="absolute inset-0 grid grid-cols-4 gap-px p-1 bg-base-100">
                   <div className="rounded bg-primary"></div>
                   <div className="rounded bg-secondary"></div>
                   <div className="rounded bg-accent"></div>
@@ -51,6 +53,60 @@ const SettingsPage = () => {
             </button>
           ))}
         </div>
+
+        {/* Privacy & Online Status Settings */}
+        {authUser && (
+          <div className="bg-base-100 rounded-2xl border border-base-300 p-5 shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <ShieldCheck className="size-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base text-base-content">
+                  Privacy & Status
+                </h3>
+                <p className="text-xs text-base-content/60">
+                  Control who can see your online presence and last seen timestamp
+                </p>
+              </div>
+            </div>
+
+            <div className="divider my-0"></div>
+
+            <div className="flex items-center justify-between gap-4 py-1">
+              <div className="space-y-1 max-w-md">
+                <label
+                  htmlFor="online-status-toggle"
+                  className="text-sm font-medium text-base-content cursor-pointer flex items-center gap-2"
+                >
+                  <span>Show Online & Last Seen Status</span>
+                  <span
+                    className={`badge badge-xs font-semibold ${
+                      authUser.showOnlineStatus !== false
+                        ? "badge-success text-white"
+                        : "badge-ghost"
+                    }`}
+                  >
+                    {authUser.showOnlineStatus !== false ? "Visible" : "Hidden"}
+                  </span>
+                </label>
+                <p className="text-xs text-base-content/50 leading-relaxed">
+                  When turned off, contacts cannot see when you are online or your last seen time.
+                </p>
+              </div>
+
+              <input
+                id="online-status-toggle"
+                type="checkbox"
+                className="toggle toggle-success toggle-md cursor-pointer"
+                checked={authUser.showOnlineStatus !== false}
+                onChange={(e) =>
+                  updatePrivacySettings({ showOnlineStatus: e.target.checked })
+                }
+              />
+            </div>
+          </div>
+        )}
 
         <h3 className="text-lg font-semibold mb-3">Preview</h3>
         <div className="rounded-xl border border-base-300 overflow-hidden bg-base-100 shadow-lg">
