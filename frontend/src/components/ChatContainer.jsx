@@ -1,6 +1,6 @@
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useRef, useState } from "react";
-import { Trash2, Pencil, Smile, Check, CheckCheck, Copy, Lock, Reply } from "lucide-react";
+import { Trash2, Pencil, Smile, Check, CheckCheck, Copy, Lock, Reply, Clock, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 import ChatHeader from "./ChatHeader";
@@ -281,7 +281,7 @@ const ChatContainer = () => {
                     )}
 
                     {/* Sender Edit/Delete */}
-                    {isSender && (
+                    {isSender && !message._id?.startsWith("temp-") && (
                       <>
                         <button
                           type="button"
@@ -462,7 +462,17 @@ const ChatContainer = () => {
 
                           {isSender && (
                             <span className="inline-flex items-center">
-                              {message.seen ? (
+                              {message.status === "sending" || (typeof message._id === "string" && message._id.startsWith("temp-")) ? (
+                                <Clock
+                                  className="size-3 opacity-60 animate-pulse"
+                                  title="Sending..."
+                                />
+                              ) : message.status === "failed" ? (
+                                <AlertCircle
+                                  className="size-3 text-red-500"
+                                  title="Failed to send"
+                                />
+                              ) : message.seen ? (
                                 <CheckCheck
                                   className="size-3.5 text-[#53bdeb] stroke-[2.5]"
                                   title="Read"

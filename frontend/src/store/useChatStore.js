@@ -88,19 +88,78 @@ export const useChatStore = create((set, get) => ({
 
   sendMessage: async (messageData) => {
     const { selectedUser, messages, users, replyingMessage } = get();
+    const authUser = useAuthStore.getState().authUser;
+    if (!selectedUser || !authUser) return;
+
+    // Generate a unique temporary ID
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const nowIso = new Date().toISOString();
+
+    const optimisticMessage = {
+      _id: tempId,
+      senderId: authUser._id,
+      receiverId: selectedUser._id,
+      text: messageData.text,
+      image: messageData.image,
+      audio: messageData.audio,
+      audioDuration: messageData.audioDuration || 0,
+      replyTo: replyingMessage ? { ...replyingMessage } : null,
+      createdAt: nowIso,
+      delivered: false,
+      seen: false,
+      status: "sending",
+    };
+
+    // Immediately display the message in the chat and update sidebar (0ms latency!)
+    const currentUsers = users.map((u) => {
+      if (u._id === selectedUser._id) {
+        return {
+          ...u,
+          lastMessage: {
+            text: messageData.text,
+            image: messageData.image,
+            audio: messageData.audio,
+            audioDuration: messageData.audioDuration,
+            createdAt: nowIso,
+            senderId: authUser._id,
+          },
+        };
+      }
+      return u;
+    });
+
+    currentUsers.sort((a, b) => {
+      const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
+      const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    set({
+      messages: [...messages, optimisticMessage],
+      users: currentUsers,
+      replyingMessage: null,
+    });
+
     try {
       const payload = {
         ...messageData,
         replyTo: replyingMessage?._id || undefined,
       };
+
       const res = await axiosInstance.post(
         `/messages/send/${selectedUser._id}`,
         payload
       );
-      set({ messages: [...messages, res.data], replyingMessage: null });
 
-      // Update lastMessage for this user in sidebar & bump to top
-      const updatedUsers = users.map((u) => {
+      // Seamlessly replace optimistic message with the confirmed server message
+      set({
+        messages: get().messages.map((m) =>
+          m._id === tempId ? res.data : m
+        ),
+      });
+
+      // Update sidebar with confirmed server data
+      const updatedUsers = get().users.map((u) => {
         if (u._id === selectedUser._id) {
           return {
             ...u,
@@ -125,6 +184,13 @@ export const useChatStore = create((set, get) => ({
 
       set({ users: updatedUsers });
     } catch (error) {
+      console.error("Error sending message:", error);
+      // Mark optimistic message as failed
+      set({
+        messages: get().messages.map((m) =>
+          m._id === tempId ? { ...m, status: "failed" } : m
+        ),
+      });
       toast.error(error.response?.data?.message || "Failed to send message");
     }
   },

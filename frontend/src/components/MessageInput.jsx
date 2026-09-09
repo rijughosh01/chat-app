@@ -76,22 +76,25 @@ const MessageInput = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!text.trim() && !imagePreview) return;
+    const currentText = text.trim();
+    const currentImage = imagePreview;
+    if (!currentText && !currentImage) return;
+
+    // Instantly clear inputs for 0ms UI response
+    setText("");
+    setImagePreview(null);
+    setShowEmojiPicker(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (socket && selectedUser) {
+      socket.emit("stopTyping", { to: selectedUser._id, from: authUser._id });
+    }
+    setIsTyping(false);
 
     try {
       await sendMessage({
-        text: text.trim(),
-        image: imagePreview,
+        text: currentText,
+        image: currentImage,
       });
-
-      setText("");
-      setImagePreview(null);
-      setShowEmojiPicker(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      if (socket && selectedUser) {
-        socket.emit("stopTyping", { to: selectedUser._id, from: authUser._id });
-      }
-      setIsTyping(false);
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -183,6 +186,13 @@ const MessageInput = () => {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Audio = reader.result;
+
+        // Reset recorder states immediately
+        setIsSendingAudio(false);
+        setIsRecording(false);
+        setRecordingDuration(0);
+        audioChunksRef.current = [];
+
         try {
           await sendMessage({
             audio: base64Audio,
@@ -190,11 +200,6 @@ const MessageInput = () => {
           });
         } catch (error) {
           console.error("Error sending voice note:", error);
-        } finally {
-          setIsSendingAudio(false);
-          setIsRecording(false);
-          setRecordingDuration(0);
-          audioChunksRef.current = [];
         }
       };
       reader.readAsDataURL(audioBlob);
