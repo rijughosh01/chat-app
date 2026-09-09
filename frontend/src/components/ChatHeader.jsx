@@ -13,14 +13,14 @@ const ChatHeader = () => {
   return (
     <div className="px-3 sm:px-4 py-2.5 border-b border-base-300/80 bg-base-100/90 backdrop-blur-md flex items-center justify-between z-10 flex-shrink-0">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        {/* Mobile Back Button */}
+        {/* WhatsApp Mobile Back Button */}
         <button
           type="button"
           onClick={() => setSelectedUser(null)}
-          className="md:hidden btn btn-ghost btn-xs btn-circle text-base-content/70 hover:text-base-content mr-0.5"
+          className="md:hidden size-9 -ml-1.5 flex items-center justify-center rounded-full hover:bg-base-200 text-base-content/80 active:scale-90 transition-all cursor-pointer flex-shrink-0"
           title="Back to chats"
         >
-          <ArrowLeft size={19} />
+          <ArrowLeft size={21} />
         </button>
 
         {/* Avatar with online dot */}
@@ -82,7 +82,7 @@ const ChatHeader = () => {
 
         <button
           type="button"
-          className="btn btn-ghost btn-sm btn-circle text-base-content/60 hover:text-base-content"
+          className="hidden md:inline-flex btn btn-ghost btn-sm btn-circle text-base-content/60 hover:text-base-content"
           onClick={() => setSelectedUser(null)}
           title="Close chat"
         >

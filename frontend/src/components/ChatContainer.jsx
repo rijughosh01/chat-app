@@ -40,6 +40,7 @@ const ChatContainer = () => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [reactionPickerMsgId, setReactionPickerMsgId] = useState(null);
+  const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
   const [modalImage, setModalImage] = useState(null);
 
   useEffect(() => {
@@ -159,7 +160,13 @@ const ChatContainer = () => {
       <div
         ref={chatScrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-2 wa-wallpaper"
+        onClick={(e) => {
+          if (e.target === chatScrollContainerRef.current) {
+            setActiveMenuMsgId(null);
+            setReactionPickerMsgId(null);
+          }
+        }}
+        className="flex-1 overflow-y-auto px-2.5 sm:px-4 py-2.5 sm:py-3 space-y-2 wa-wallpaper overscroll-contain"
       >
         {/* Top Loading Spinner for Infinite Scroll */}
         {isLoadingMoreMessages && (
@@ -205,6 +212,8 @@ const ChatContainer = () => {
           const aggregatedReactions = getAggregatedReactions(message.reactions);
           const hasReactions = aggregatedReactions.length > 0;
 
+          const isSticker = Boolean(message.sticker && !message.text);
+
           return (
             <div key={message._id} className="space-y-1.5 animate-message-in">
               {/* WhatsApp Date Divider Pill */}
@@ -226,22 +235,36 @@ const ChatContainer = () => {
               >
                 {/* Bubble Container */}
                 <div
+                  onClick={() =>
+                    setActiveMenuMsgId((prev) =>
+                      prev === message._id ? null : message._id
+                    )
+                  }
                   className={`
-                    relative group max-w-[85%] sm:max-w-[65%] px-3 pt-2 pb-1.5 transition-all
+                    relative group transition-all cursor-pointer
                     ${
-                      isSender
-                        ? "wa-bubble-outgoing rounded-2xl rounded-tr-xs"
-                        : "wa-bubble-incoming rounded-2xl rounded-tl-xs"
+                      isSticker
+                        ? "p-1 bg-transparent border-none shadow-none"
+                        : `max-w-[88%] sm:max-w-[65%] px-3 pt-2 pb-1.5 ${
+                            isSender
+                              ? "wa-bubble-outgoing rounded-2xl rounded-tr-xs"
+                              : "wa-bubble-incoming rounded-2xl rounded-tl-xs"
+                          }`
                     }
                   `}
                 >
-                  {/* Floating Action Menu on Hover */}
+                  {/* Floating Action Menu on Hover or Tap */}
                   <div
                     className={`
                       absolute -top-7 ${isSender ? "right-1" : "left-1"}
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-150
+                      transition-all duration-150
                       bg-base-100 dark:bg-[#111b21] border border-base-300 shadow-md rounded-full px-1.5 py-0.5
                       flex items-center gap-0.5 z-20
+                      ${
+                        activeMenuMsgId === message._id
+                          ? "opacity-100 scale-100 pointer-events-auto"
+                          : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
+                      }
                     `}
                   >
                     {/* Reply action */}
@@ -367,6 +390,9 @@ const ChatContainer = () => {
                             : typeof message.replyTo === "object" &&
                               message.replyTo.audio
                             ? "🎙️ Voice message"
+                            : typeof message.replyTo === "object" &&
+                              message.replyTo.sticker
+                            ? "💟 Sticker"
                             : "Message"}
                         </p>
                       </div>
@@ -376,6 +402,14 @@ const ChatContainer = () => {
                             src={message.replyTo.image}
                             alt="Quoted thumb"
                             className="size-8 object-cover rounded-md border border-base-300 flex-shrink-0"
+                          />
+                        )}
+                      {typeof message.replyTo === "object" &&
+                        message.replyTo.sticker && (
+                          <img
+                            src={message.replyTo.sticker}
+                            alt="Quoted sticker"
+                            className="size-8 object-contain flex-shrink-0"
                           />
                         )}
                     </div>
@@ -448,50 +482,86 @@ const ChatContainer = () => {
                         </div>
                       )}
 
-                      {/* WhatsApp Text Content + Inline Time & Checkmark */}
-                      <div className="flex flex-wrap items-end justify-end gap-x-2 gap-y-1">
-                        {message.text && (
-                          <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words flex-1 min-w-[60px] font-normal">
-                            {message.text}
-                          </p>
-                        )}
+                      {/* Sticker Content (WhatsApp Style) */}
+                      {message.sticker && (
+                        <div className="relative group/sticker inline-block select-none my-0.5">
+                          <img
+                            src={message.sticker}
+                            alt="Sticker"
+                            className="w-32 h-32 sm:w-36 sm:h-36 object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-200 pointer-events-none"
+                            loading="lazy"
+                          />
 
-                        {/* Inline Time & WhatsApp Checkmarks */}
-                        <div className="inline-flex items-center gap-1 text-[11px] opacity-70 select-none pb-0.5 flex-shrink-0 self-end ml-auto">
-                          <span>{formatMessageTime(message.createdAt)}</span>
-
-                          {isSender && (
-                            <span className="inline-flex items-center">
-                              {message.status === "sending" || (typeof message._id === "string" && message._id.startsWith("temp-")) ? (
-                                <Clock
-                                  className="size-3 opacity-60 animate-pulse"
-                                  title="Sending..."
-                                />
-                              ) : message.status === "failed" ? (
-                                <AlertCircle
-                                  className="size-3 text-red-500"
-                                  title="Failed to send"
-                                />
-                              ) : message.seen ? (
-                                <CheckCheck
-                                  className="size-3.5 text-[#53bdeb] stroke-[2.5]"
-                                  title="Read"
-                                />
-                              ) : message.delivered ? (
-                                <CheckCheck
-                                  className="size-3.5 opacity-60 stroke-[2]"
-                                  title="Delivered"
-                                />
-                              ) : (
-                                <Check
-                                  className="size-3.5 opacity-50 stroke-[2]"
-                                  title="Sent"
-                                />
+                          {/* Floating WhatsApp Translucent Time & Status Pill for Stickers */}
+                          {isSticker && (
+                            <div className="absolute bottom-1 right-1 bg-black/55 backdrop-blur-xs text-white px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 select-none shadow-sm">
+                              <span>{formatMessageTime(message.createdAt)}</span>
+                              {isSender && (
+                                <span className="inline-flex items-center">
+                                  {message.status === "sending" || (typeof message._id === "string" && message._id.startsWith("temp-")) ? (
+                                    <Clock className="size-2.5 opacity-80 animate-pulse" title="Sending..." />
+                                  ) : message.status === "failed" ? (
+                                    <AlertCircle className="size-2.5 text-red-400" title="Failed to send" />
+                                  ) : message.seen ? (
+                                    <CheckCheck className="size-3 text-[#53bdeb] stroke-[2.5]" title="Read" />
+                                  ) : message.delivered ? (
+                                    <CheckCheck className="size-3 opacity-85 stroke-[2]" title="Delivered" />
+                                  ) : (
+                                    <Check className="size-3 opacity-75 stroke-[2]" title="Sent" />
+                                  )}
+                                </span>
                               )}
-                            </span>
+                            </div>
                           )}
                         </div>
-                      </div>
+                      )}
+
+                      {/* WhatsApp Text Content + Inline Time & Checkmark */}
+                      {!isSticker && (
+                        <div className="flex flex-wrap items-end justify-end gap-x-2 gap-y-1">
+                          {message.text && (
+                            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words flex-1 min-w-[60px] font-normal">
+                              {message.text}
+                            </p>
+                          )}
+
+                          {/* Inline Time & WhatsApp Checkmarks */}
+                          <div className="inline-flex items-center gap-1 text-[11px] opacity-70 select-none pb-0.5 flex-shrink-0 self-end ml-auto">
+                            <span>{formatMessageTime(message.createdAt)}</span>
+
+                            {isSender && (
+                              <span className="inline-flex items-center">
+                                {message.status === "sending" || (typeof message._id === "string" && message._id.startsWith("temp-")) ? (
+                                  <Clock
+                                    className="size-3 opacity-60 animate-pulse"
+                                    title="Sending..."
+                                  />
+                                ) : message.status === "failed" ? (
+                                  <AlertCircle
+                                    className="size-3 text-red-500"
+                                    title="Failed to send"
+                                  />
+                                ) : message.seen ? (
+                                  <CheckCheck
+                                    className="size-3.5 text-[#53bdeb] stroke-[2.5]"
+                                    title="Read"
+                                  />
+                                ) : message.delivered ? (
+                                  <CheckCheck
+                                    className="size-3.5 opacity-60 stroke-[2]"
+                                    title="Delivered"
+                                  />
+                                ) : (
+                                  <Check
+                                    className="size-3.5 opacity-50 stroke-[2]"
+                                    title="Sent"
+                                  />
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
 

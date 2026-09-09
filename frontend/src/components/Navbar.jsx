@@ -1,14 +1,20 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
 import { CircleUser, LogOut, MessagesSquare, Settings } from "lucide-react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
+  const { selectedUser } = useChatStore();
+  const location = useLocation();
+
+  const isChatOpenOnMobile = location.pathname === "/" && Boolean(selectedUser);
 
   return (
     <header
-      className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 
-    backdrop-blur-lg bg-base-100/80"
+      className={`bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 backdrop-blur-lg bg-base-100/80 transition-all ${
+        isChatOpenOnMobile ? "hidden md:block" : "block"
+      }`}
     >
       <div className="container mx-auto px-4 h-16">
         <div className="flex items-center justify-between h-full">

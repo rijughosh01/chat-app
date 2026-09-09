@@ -19,9 +19,13 @@ const HomePage = () => {
   }, [socket, subscribeToMessages, unsubscribeFromMessages]);
 
   return (
-    <div className="h-screen bg-base-200/50 flex flex-col pt-16 overflow-hidden">
-      <div className="flex-1 flex items-center justify-center p-0 sm:p-2 md:p-4 overflow-hidden">
-        <div className="bg-base-100 sm:rounded-2xl border-0 sm:border border-base-300 shadow-2xl w-full max-w-[1600px] h-full overflow-hidden flex">
+    <div
+      className={`h-[100dvh] bg-base-200/50 flex flex-col ${
+        selectedUser ? "pt-0 md:pt-16" : "pt-16"
+      } overflow-hidden`}
+    >
+      <div className="flex-1 flex items-center justify-center p-0 md:p-2 lg:p-4 overflow-hidden w-full h-full">
+        <div className="bg-base-100 rounded-none md:rounded-2xl border-0 md:border border-base-300 shadow-none md:shadow-2xl w-full max-w-[1600px] h-full overflow-hidden flex">
           {/* Sidebar: full width on mobile when no chat selected; fixed width on desktop */}
           <div
             className={`

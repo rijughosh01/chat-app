@@ -68,7 +68,7 @@ const Sidebar = () => {
             placeholder="Search or start new chat"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input input-sm bg-base-200/80 border-transparent focus:border-emerald-500/50 rounded-lg w-full pl-9 pr-8 text-xs focus:outline-none placeholder:text-base-content/40 transition-colors"
+            className="input input-sm bg-base-200/80 border-transparent focus:border-emerald-500/50 rounded-lg w-full pl-9 pr-8 text-base sm:text-xs focus:outline-none placeholder:text-base-content/40 transition-colors"
           />
           {searchQuery && (
             <button
@@ -202,6 +202,8 @@ const Sidebar = () => {
                             ? ` (${Math.round(user.lastMessage.audioDuration)}s)`
                             : ""}
                         </span>
+                      ) : user.lastMessage.sticker ? (
+                        <span>💟 Sticker</span>
                       ) : (
                         <span className="truncate">{user.lastMessage.text}</span>
                       )

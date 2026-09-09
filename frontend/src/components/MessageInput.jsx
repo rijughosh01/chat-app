@@ -230,6 +230,7 @@ const MessageInput = () => {
     };
   }, []);
 
+
   // Auto-focus input when replying
   useEffect(() => {
     if (replyingMessage && textInputRef.current) {
@@ -238,7 +239,7 @@ const MessageInput = () => {
   }, [replyingMessage]);
 
   return (
-    <div className="p-2.5 sm:p-3 bg-base-100/90 backdrop-blur-md border-t border-base-300/80 relative flex-shrink-0">
+    <div className="p-2.5 sm:p-3 bg-base-100/90 backdrop-blur-md border-t border-base-300/80 relative flex-shrink-0 z-20">
       {/* WhatsApp-Style Reply Quoting Banner */}
       {replyingMessage && (
         <div className="mb-2 flex items-center justify-between p-2 sm:px-3 bg-base-200/90 rounded-xl border-l-4 border-emerald-500 border border-base-300 shadow-sm animate-message-in">
@@ -286,7 +287,7 @@ const MessageInput = () => {
       {showEmojiPicker && (
         <div
           ref={emojiPickerRef}
-          className="absolute bottom-16 left-3 z-50 shadow-2xl rounded-2xl overflow-hidden border border-base-300"
+          className="absolute bottom-full mb-2 left-1 right-1 sm:right-auto sm:left-3 z-50 shadow-2xl rounded-2xl overflow-hidden border border-base-300 max-h-[min(360px,calc(100dvh-180px))] flex flex-col justify-center items-center sm:items-start animate-in fade-in zoom-in-95 duration-150"
         >
           <Picker
             data={data}
@@ -294,6 +295,10 @@ const MessageInput = () => {
               setText((prev) => prev + emoji.native);
             }}
             theme="auto"
+            previewPosition="none"
+            skinTonePosition="search"
+            maxFrequentRows={1}
+            perLine={8}
           />
         </div>
       )}
@@ -386,18 +391,20 @@ const MessageInput = () => {
             <button
               id="emoji-trigger-btn"
               type="button"
-              className="p-1.5 text-base-content/50 hover:text-base-content transition-colors rounded-full hover:bg-base-300/50 cursor-pointer"
+              className={`p-2 sm:p-1.5 transition-colors rounded-full hover:bg-base-300/50 cursor-pointer ${
+                showEmojiPicker ? "text-emerald-500 bg-emerald-500/10" : "text-base-content/50 hover:text-base-content"
+              }`}
               onClick={() => setShowEmojiPicker((prev) => !prev)}
               title="Emojis"
             >
               <Smile size={21} />
             </button>
 
-            {/* Text input */}
+            {/* Text input (text-base on mobile prevents iOS auto-zoom) */}
             <input
               ref={textInputRef}
               type="text"
-              className="w-full bg-transparent border-none outline-none px-2 py-1.5 text-sm text-base-content placeholder:text-base-content/40 focus:ring-0"
+              className="w-full bg-transparent border-none outline-none px-2 py-1.5 text-base sm:text-sm text-base-content placeholder:text-base-content/40 focus:ring-0"
               placeholder="Type a message..."
               value={text}
               onChange={handleTyping}
@@ -416,7 +423,7 @@ const MessageInput = () => {
             {/* Attachment Paperclip Button */}
             <button
               type="button"
-              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+              className={`p-2 sm:p-1.5 rounded-full transition-colors cursor-pointer ${
                 imagePreview
                   ? "text-emerald-500 bg-emerald-500/10"
                   : "text-base-content/50 hover:text-base-content hover:bg-base-300/50"

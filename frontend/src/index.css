@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile Safe Area & Touch Polish */
+html, body, #root {
+  height: 100%;
+  height: 100dvh;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Sleek WhatsApp Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

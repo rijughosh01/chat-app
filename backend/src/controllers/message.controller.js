@@ -34,6 +34,7 @@ export const getUsersForSidebar = async (req, res) => {
                 image: lastMessage.image,
                 audio: lastMessage.audio,
                 audioDuration: lastMessage.audioDuration,
+                sticker: lastMessage.sticker,
                 createdAt: lastMessage.createdAt,
                 senderId: lastMessage.senderId,
               }
@@ -80,7 +81,7 @@ export const getMessages = async (req, res) => {
       .limit(limitNum + 1)
       .populate({
         path: "replyTo",
-        select: "text image audio senderId",
+        select: "text image audio sticker senderId",
         populate: { path: "senderId", select: "fullName" },
       });
 
@@ -108,7 +109,7 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, audio, audioDuration, replyTo } = req.body;
+    const { text, image, audio, audioDuration, sticker, replyTo } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -116,6 +117,14 @@ export const sendMessage = async (req, res) => {
     if (image) {
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
+    }
+
+    let stickerUrl = sticker;
+    if (sticker && sticker.startsWith("data:")) {
+      const uploadResponse = await cloudinary.uploader.upload(sticker, {
+        folder: "chat_stickers",
+      });
+      stickerUrl = uploadResponse.secure_url;
     }
 
     let audioUrl;
@@ -162,6 +171,7 @@ export const sendMessage = async (req, res) => {
       image: imageUrl,
       audio: audioUrl,
       audioDuration: audioDuration || 0,
+      sticker: stickerUrl,
       delivered, 
       seen: false, 
       replyTo: replyTo || null,
@@ -172,7 +182,7 @@ export const sendMessage = async (req, res) => {
     if (newMessage.replyTo) {
       await newMessage.populate({
         path: "replyTo",
-        select: "text image audio senderId",
+        select: "text image audio sticker senderId",
         populate: { path: "senderId", select: "fullName" },
       });
     }

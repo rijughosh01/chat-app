@@ -25,6 +25,9 @@ const messageSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    sticker: {
+      type: String,
+    },
     delivered: {
       type: Boolean,
       default: false,
