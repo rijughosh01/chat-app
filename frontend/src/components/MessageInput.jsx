@@ -75,7 +75,7 @@ const MessageInput = () => {
   };
 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const currentText = text.trim();
     const currentImage = imagePreview;
     if (!currentText && !currentImage) return;
@@ -89,6 +89,12 @@ const MessageInput = () => {
       socket.emit("stopTyping", { to: selectedUser._id, from: authUser._id });
     }
     setIsTyping(false);
+
+    // Keep mobile virtual keyboard open and input focused continuously (WhatsApp behavior)
+    textInputRef.current?.focus();
+    setTimeout(() => {
+      textInputRef.current?.focus();
+    }, 10);
 
     try {
       await sendMessage({
@@ -435,25 +441,37 @@ const MessageInput = () => {
             </button>
           </div>
 
-          {/* Dynamic WhatsApp Action: Send Button when typing/image, or Mic button when empty */}
-          {text.trim() || imagePreview ? (
-            <button
-              type="submit"
-              className="size-10 sm:size-11 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white flex items-center justify-center shadow-md transition-all flex-shrink-0 cursor-pointer"
-              title="Send"
-            >
-              <Send size={18} className="translate-x-0.5" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={startRecording}
-              className="size-10 sm:size-11 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white flex items-center justify-center shadow-md transition-all flex-shrink-0 cursor-pointer"
-              title="Record voice note"
-            >
-              <Mic size={20} />
-            </button>
-          )}
+          {/* Dynamic WhatsApp Action: Unified button preserving DOM identity to keep mobile keyboard open */}
+          <button
+            type={text.trim() || imagePreview ? "submit" : "button"}
+            onPointerDown={(e) => {
+              if (text.trim() || imagePreview) {
+                // Prevent focus from shifting away from text input on mobile touch
+                e.preventDefault();
+              }
+            }}
+            onMouseDown={(e) => {
+              if (text.trim() || imagePreview) {
+                // Prevent focus shift on desktop
+                e.preventDefault();
+              }
+            }}
+            onClick={(e) => {
+              if (text.trim() || imagePreview) {
+                handleSendMessage(e);
+              } else {
+                startRecording();
+              }
+            }}
+            className="size-10 sm:size-11 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white flex items-center justify-center shadow-md transition-all flex-shrink-0 cursor-pointer"
+            title={text.trim() || imagePreview ? "Send message" : "Record voice note"}
+          >
+            {text.trim() || imagePreview ? (
+              <Send size={18} className="translate-x-0.5 animate-in zoom-in-75 duration-100" />
+            ) : (
+              <Mic size={20} className="animate-in zoom-in-75 duration-100" />
+            )}
+          </button>
         </form>
       )}
     </div>
