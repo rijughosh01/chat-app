@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Cult Classic Party Parrot Animated Sticker -->
+  <defs>
+    <filter id="parrot-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.2" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes parrotBob {
+      0% { transform: translate(0, 0) rotate(0deg); fill: #ef4444; }
+      16% { transform: translate(8px, -8px) rotate(12deg); fill: #f97316; }
+      33% { transform: translate(12px, 2px) rotate(8deg); fill: #eab308; }
+      50% { transform: translate(0, 8px) rotate(-4deg); fill: #22c55e; }
+      66% { transform: translate(-10px, 2px) rotate(-14deg); fill: #06b6d4; }
+      83% { transform: translate(-6px, -8px) rotate(-8deg); fill: #a855f7; }
+      100% { transform: translate(0, 0) rotate(0deg); fill: #ef4444; }
+    }
+    @keyframes beakBob {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-5deg); }
+    }
+    .parrot-group {
+      transform-origin: 90px 110px;
+      animation: parrotBob 0.38s linear infinite;
+    }
+  </style>
+
+  <g filter="url(#parrot-shadow)">
+    <!-- White Sticker Outline Behind Entire Parrot -->
+    <path d="M 60 160 C 35 140, 30 95, 48 60 C 65 25, 115 15, 140 45 C 165 75, 160 120, 145 150 C 130 175, 85 175, 60 160 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+    <g class="parrot-group">
+      <!-- Parrot Body & Head with Color Cycling -->
+      <path d="M 64 152 C 40 135, 36 98, 52 66 C 68 35, 112 26, 134 52 C 158 80, 152 118, 140 144 C 126 166, 88 166, 64 152 Z" />
+
+      <!-- Yellow Cheeks -->
+      <ellipse cx="85" cy="85" rx="14" ry="12" fill="#fef08a" />
+
+      <!-- Large Round Eye -->
+      <circle cx="108" cy="62" r="14" fill="#ffffff" stroke="#1e293b" stroke-width="3" />
+      <circle cx="112" cy="62" r="7" fill="#1e293b" />
+      <circle cx="114" cy="59" r="2.5" fill="#ffffff" />
+
+      <!-- Curved Hook Beak -->
+      <path d="M 124 55 Q 165 70 146 100 Q 128 85 122 75 Z" fill="#475569" stroke="#1e293b" stroke-width="2.5" />
+      <path d="M 124 74 Q 140 82 135 94 Z" fill="#334155" />
+
+      <!-- Party Confetti Stars -->
+      <polygon points="40,30 43,36 50,37 45,42 46,49 40,45 34,49 35,42 30,37 37,36" fill="#facc15" />
+      <polygon points="160,110 162,115 168,116 164,120 165,126 160,123 155,126 156,120 152,116 158,115" fill="#38bdf8" />
+    </g>
+  </g>
+</svg>

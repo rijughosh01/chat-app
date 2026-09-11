@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Shocked Pikachu Animated Sticker -->
+  <defs>
+    <filter id="pika-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.2" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes earShock {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px) scaleY(1.05); }
+    }
+    @keyframes sparkFlash {
+      0%, 100% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+    @keyframes mouthDrop {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(1.15); }
+    }
+    .pika-head {
+      transform-origin: 100px 140px;
+      animation: earShock 0.35s ease-in-out infinite;
+    }
+    .pika-mouth {
+      transform-origin: 100px 128px;
+      animation: mouthDrop 0.7s ease-in-out infinite;
+    }
+    .spark-left {
+      transform-origin: 40px 115px;
+      animation: sparkFlash 0.35s ease-in-out infinite;
+    }
+    .spark-right {
+      transform-origin: 160px 115px;
+      animation: sparkFlash 0.35s ease-in-out 0.18s infinite;
+    }
+  </style>
+
+  <g filter="url(#pika-shadow)">
+    <!-- Electric Sparks Left & Right -->
+    <path d="M 32 95 L 42 110 L 30 114 L 46 130 L 38 116 L 48 114 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" class="spark-left" />
+    <path d="M 168 95 L 158 110 L 170 114 L 154 130 L 162 116 L 152 114 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" class="spark-right" />
+
+    <g class="pika-head">
+      <!-- Outer White Sticker Outline -->
+      <path d="M 52 165 C 40 145, 32 105, 54 85 C 40 40, 55 15, 68 22 C 78 30, 85 55, 92 75 C 108 75, 115 55, 122 30 C 135 15, 150 40, 136 85 C 158 105, 150 145, 138 165 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" stroke-linejoin="round" />
+
+      <!-- Long Pointy Ears with Black Tips -->
+      <polygon points="56,80 62,20 86,68" fill="#fde047" stroke="#eab308" stroke-width="2" />
+      <polygon points="60,35 62,20 74,38" fill="#1e293b" />
+      <polygon points="134,80 128,20 104,68" fill="#fde047" stroke="#eab308" stroke-width="2" />
+      <polygon points="130,35 128,20 116,38" fill="#1e293b" />
+
+      <!-- Round Yellow Head -->
+      <ellipse cx="100" cy="115" rx="55" ry="48" fill="#fde047" stroke="#eab308" stroke-width="2" />
+
+      <!-- Wide Shocked Eyes -->
+      <ellipse cx="74" cy="98" rx="12" ry="14" fill="#1e293b" />
+      <circle cx="71" cy="94" r="4.5" fill="#ffffff" />
+      <ellipse cx="126" cy="98" rx="12" ry="14" fill="#1e293b" />
+      <circle cx="123" cy="94" r="4.5" fill="#ffffff" />
+
+      <!-- Red Electric Cheeks -->
+      <circle cx="56" cy="118" r="12" fill="#ef4444" />
+      <circle cx="144" cy="118" r="12" fill="#ef4444" />
+
+      <!-- Tiny Nose -->
+      <polygon points="98,110 102,110 100,113" fill="#1e293b" />
+
+      <!-- Iconic Wide-Open O Mouth (Shocked Expression) -->
+      <g class="pika-mouth">
+        <ellipse cx="100" cy="130" rx="15" ry="18" fill="#7f1d1d" stroke="#1e293b" stroke-width="3" />
+        <ellipse cx="100" cy="138" rx="10" ry="7" fill="#f43f5e" />
+      </g>
+    </g>
+  </g>
+</svg>

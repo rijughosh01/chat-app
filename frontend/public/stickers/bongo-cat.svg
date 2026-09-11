@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Bongo Cat Animated Sticker -->
+  <defs>
+    <filter id="bongo-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes pawLeft {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px) rotate(-6deg); }
+    }
+    @keyframes pawRight {
+      0%, 100% { transform: translateY(-12px) rotate(6deg); }
+      50% { transform: translateY(0); }
+    }
+    @keyframes bongoHead {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(3px); }
+    }
+    @keyframes noteFloat {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+      50% { opacity: 1; transform: translate(6px, -12px) scale(1); }
+      100% { opacity: 0; transform: translate(12px, -24px) scale(1.2); }
+    }
+    .cat-head {
+      transform-origin: 100px 140px;
+      animation: bongoHead 0.22s ease-in-out infinite alternate;
+    }
+    .left-paw {
+      transform-origin: 65px 145px;
+      animation: pawLeft 0.22s ease-in-out infinite;
+    }
+    .right-paw {
+      transform-origin: 135px 145px;
+      animation: pawRight 0.22s ease-in-out infinite;
+    }
+    .music-note-1 {
+      animation: noteFloat 1.2s ease-out infinite;
+    }
+    .music-note-2 {
+      animation: noteFloat 1.2s ease-out 0.6s infinite;
+    }
+  </style>
+
+  <g filter="url(#bongo-shadow)">
+    <!-- Floating Musical Notes -->
+    <text x="145" y="45" font-family="Arial, sans-serif" font-weight="bold" font-size="20" fill="#ec4899" class="music-note-1">♪</text>
+    <text x="40" y="55" font-family="Arial, sans-serif" font-weight="bold" font-size="18" fill="#8b5cf6" class="music-note-2">♫</text>
+
+    <!-- Table / Desk -->
+    <path d="M 20 155 Q 100 148 180 155 L 185 185 Q 100 178 15 185 Z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="3" />
+    <path d="M 28 158 Q 100 152 172 158 L 175 166 Q 100 160 25 166 Z" fill="#94a3b8" opacity="0.4" />
+
+    <!-- Cat Head & Body -->
+    <g class="cat-head">
+      <!-- White Sticker Outline -->
+      <path d="M 45 155 C 40 100, 48 58, 62 42 C 68 54, 76 64, 88 64 C 112 64, 120 54, 126 42 C 140 58, 148 100, 145 155 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="5" stroke-linejoin="round" />
+      <!-- Cat Fur Body -->
+      <path d="M 48 155 C 44 102, 52 62, 64 48 C 70 58, 78 66, 90 66 C 110 66, 118 58, 124 48 C 136 62, 144 102, 142 155 Z" fill="#ffffff" />
+      <!-- Pink Ears -->
+      <polygon points="65,54 75,70 85,68" fill="#fbcfe8" />
+      <polygon points="123,54 113,70 103,68" fill="#fbcfe8" />
+      <!-- Closed Happy Eyes (^ ^) -->
+      <path d="M 72 96 Q 80 88 88 96" stroke="#1e293b" stroke-width="3.5" fill="none" stroke-linecap="round" />
+      <path d="M 102 96 Q 110 88 118 96" stroke="#1e293b" stroke-width="3.5" fill="none" stroke-linecap="round" />
+      <!-- Cute Cat Mouth :3 -->
+      <path d="M 88 106 Q 95 112 95 106 Q 95 112 102 106" stroke="#1e293b" stroke-width="3" fill="none" stroke-linecap="round" />
+      <!-- Rosy Cheeks -->
+      <circle cx="68" cy="106" r="6" fill="#fda4af" opacity="0.7" />
+      <circle cx="122" cy="106" r="6" fill="#fda4af" opacity="0.7" />
+    </g>
+
+    <!-- Animated Left Paw -->
+    <g class="left-paw">
+      <ellipse cx="66" cy="150" rx="14" ry="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="3" />
+      <circle cx="66" cy="151" r="5" fill="#fbcfe8" />
+    </g>
+
+    <!-- Animated Right Paw -->
+    <g class="right-paw">
+      <ellipse cx="124" cy="150" rx="14" ry="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="3" />
+      <circle cx="124" cy="151" r="5" fill="#fbcfe8" />
+    </g>
+  </g>
+</svg>

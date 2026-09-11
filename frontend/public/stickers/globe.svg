@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- 3D Shiny Glowing Earth Globe Sticker & Tab Icon -->
+  <defs>
+    <radialGradient id="ocean-grad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="45%" stop-color="#0284c7" />
+      <stop offset="85%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#075985" />
+    </radialGradient>
+
+    <linearGradient id="land-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#86efac" />
+      <stop offset="50%" stop-color="#22c55e" />
+      <stop offset="100%" stop-color="#15803d" />
+    </linearGradient>
+
+    <radialGradient id="atmosphere" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </radialGradient>
+
+    <filter id="globe-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0284c7" flood-opacity="0.35" />
+    </filter>
+
+    <clipPath id="globe-clip">
+      <circle cx="50" cy="50" r="44" />
+    </clipPath>
+  </defs>
+
+  <style>
+    .globe-spin {
+      animation: orbitRotate 12s linear infinite;
+      transform-origin: 50px 50px;
+    }
+    @keyframes orbitRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .orbit-star {
+      animation: starTwinkle 2s ease-in-out infinite alternate;
+    }
+    @keyframes starTwinkle {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      100% { transform: scale(1.2); opacity: 1; }
+    }
+  </style>
+
+  <g filter="url(#globe-glow)">
+    <!-- Outer Glow Aura -->
+    <circle cx="50" cy="50" r="45" fill="none" stroke="#38bdf8" stroke-width="2" opacity="0.6" />
+
+    <!-- Ocean Base -->
+    <circle cx="50" cy="50" r="44" fill="url(#ocean-grad)" />
+
+    <!-- Continents (Clipped to Sphere) -->
+    <g clip-path="url(#globe-clip)" fill="url(#land-grad)">
+      <!-- North America -->
+      <path d="M 22 28 Q 28 20 40 22 Q 44 26 38 34 Q 34 38 24 40 Q 18 36 22 28 Z" opacity="0.95" />
+      <!-- South America -->
+      <path d="M 30 45 Q 38 46 36 58 Q 34 72 28 78 Q 24 70 26 55 Z" opacity="0.95" />
+      <!-- Europe & Africa -->
+      <path d="M 52 18 Q 62 16 68 24 Q 64 32 54 30 Z" opacity="0.95" />
+      <path d="M 50 35 Q 66 32 72 44 Q 74 60 62 72 Q 54 70 52 52 Z" opacity="0.95" />
+      <!-- Asia & Australia -->
+      <path d="M 68 18 Q 84 20 88 32 Q 80 42 70 38 Z" opacity="0.95" />
+      <path d="M 76 56 Q 86 54 84 66 Q 78 72 74 64 Z" opacity="0.95" />
+      <!-- Latitude & Longitude Subtle Grid -->
+      <ellipse cx="50" cy="50" rx="44" ry="20" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.25" />
+      <ellipse cx="50" cy="50" rx="44" ry="34" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.25" />
+      <ellipse cx="50" cy="50" rx="20" ry="44" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.25" />
+      <line x1="6" y1="50" x2="94" y2="50" stroke="#ffffff" stroke-width="1.2" opacity="0.3" />
+      <line x1="50" y1="6" x2="50" y2="94" stroke="#ffffff" stroke-width="1.2" opacity="0.3" />
+    </g>
+
+    <!-- Glassy Atmosphere / Curved Specular Highlight -->
+    <circle cx="50" cy="50" r="44" fill="url(#atmosphere)" />
+    <path d="M 18 20 Q 50 10 82 20 Q 50 32 18 20 Z" fill="#ffffff" opacity="0.35" />
+
+    <!-- Orbit Ring -->
+    <g class="globe-spin">
+      <ellipse cx="50" cy="50" rx="48" ry="16" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7" transform="rotate(-25 50 50)" />
+    </g>
+
+    <!-- Sparkle Stars -->
+    <path class="orbit-star" style="transform-origin: 88px 18px;" d="M88 12 L90 16 L94 18 L90 20 L88 24 L86 20 L82 18 L86 16 Z" fill="#fef08a" />
+    <path class="orbit-star" style="transform-origin: 14px 76px; animation-delay: 1s;" d="M14 72 L15.5 75 L18 76 L15.5 77 L14 80 L12.5 77 L10 76 L12.5 75 Z" fill="#ffffff" />
+  </g>
+</svg>

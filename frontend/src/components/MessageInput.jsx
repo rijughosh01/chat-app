@@ -5,7 +5,7 @@ import { Image, Send, X, Smile, Paperclip, Reply, Mic, Trash2 } from "lucide-rea
 import toast from "react-hot-toast";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
-import StickerPicker, { WhatsAppStickerIcon } from "./StickerPicker";
+import StickerPicker, { WhatsAppStickerIcon, addStickerToRecents } from "./StickerPicker";
 
 function formatRecordTime(secs) {
   const m = Math.floor(secs / 60);
@@ -112,6 +112,10 @@ const MessageInput = () => {
 
   const handleSendSticker = async (stickerUrl) => {
     if (!stickerUrl) return;
+
+    // Guaranteed recents persistence across all triggers
+    addStickerToRecents(stickerUrl);
+
     setShowStickerPicker(false);
     setShowEmojiPicker(false);
 

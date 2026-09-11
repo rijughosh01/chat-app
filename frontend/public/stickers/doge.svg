@@ -1,37 +1,157 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
-  <!-- Doge Shiba Inu Transparent Sticker -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Animated Doge Shiba Inu Transparent Sticker -->
   <defs>
-    <filter id="doge-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.2" />
+    <filter id="doge-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.25" />
     </filter>
   </defs>
+
+  <style>
+    .doge-body {
+      transform-origin: 100px 140px;
+      animation: dogeHeadTilt 2.4s ease-in-out infinite alternate;
+    }
+    @keyframes dogeHeadTilt {
+      0% { transform: rotate(-5deg); }
+      50% { transform: rotate(4deg); }
+      100% { transform: rotate(-5deg); }
+    }
+
+    .ear-left {
+      transform-origin: 50px 68px;
+      animation: earTwitchL 1.8s ease-in-out infinite alternate;
+    }
+    @keyframes earTwitchL {
+      0%, 80% { transform: rotate(0deg); }
+      85% { transform: rotate(-10deg); }
+      90% { transform: rotate(4deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    .ear-right {
+      transform-origin: 150px 68px;
+      animation: earTwitchR 2.1s ease-in-out infinite alternate 0.3s;
+    }
+    @keyframes earTwitchR {
+      0%, 75% { transform: rotate(0deg); }
+      82% { transform: rotate(12deg); }
+      88% { transform: rotate(-3deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    .doge-eyes {
+      animation: dogeGaze 3s ease-in-out infinite;
+    }
+    @keyframes dogeGaze {
+      0%, 40% { transform: translate(0, 0); }
+      45%, 70% { transform: translate(-4px, -1px); }
+      75%, 100% { transform: translate(2px, 0px); }
+    }
+
+    .doge-eyebrows {
+      animation: browWiggle 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes browWiggle {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-2.5px); }
+    }
+
+    .text-wow {
+      animation: floatWord1 2s ease-in-out infinite alternate;
+      transform-origin: 30px 38px;
+    }
+    @keyframes floatWord1 {
+      0% { transform: scale(0.9) rotate(-8deg); fill: #ec4899; }
+      100% { transform: scale(1.15) rotate(-2deg); fill: #a855f7; }
+    }
+
+    .text-happy {
+      animation: floatWord2 2.3s ease-in-out infinite alternate;
+      transform-origin: 155px 165px;
+    }
+    @keyframes floatWord2 {
+      0% { transform: scale(0.95) rotate(4deg); fill: #06b6d4; }
+      100% { transform: scale(1.12) rotate(-3deg); fill: #10b981; }
+    }
+
+    .text-such {
+      animation: floatWord3 2.7s ease-in-out infinite alternate 0.4s;
+      transform-origin: 155px 42px;
+    }
+    @keyframes floatWord3 {
+      0% { transform: scale(0.85) rotate(6deg); opacity: 0.7; }
+      100% { transform: scale(1.08) rotate(-4deg); opacity: 1; }
+    }
+
+    .sparkle {
+      animation: starTwinkle 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes starTwinkle {
+      0% { transform: scale(0.6) rotate(0deg); opacity: 0.3; }
+      100% { transform: scale(1.25) rotate(45deg); opacity: 1; }
+    }
+  </style>
+
   <g filter="url(#doge-shadow)">
-    <!-- White Sticker Outline -->
-    <ellipse cx="100" cy="108" rx="72" ry="65" fill="#ffffff" stroke="#e2e8f0" stroke-width="5" />
-    <!-- Doge Face Fur -->
-    <ellipse cx="100" cy="108" rx="68" ry="60" fill="#e0a353" />
-    <!-- White Muzzle / Cheeks -->
-    <ellipse cx="100" cy="125" rx="44" ry="34" fill="#fdfbf7" />
-    <path d="M 68 110 C 60 70, 75 40, 95 65" fill="#fdfbf7" />
-    <path d="M 132 110 C 140 70, 125 40, 105 65" fill="#fdfbf7" />
-    <!-- Pointy Shiba Ears -->
-    <polygon points="50,68 35,28 72,42" fill="#d9933b" stroke="#ffffff" stroke-width="3" />
-    <polygon points="48,60 42,36 62,45" fill="#f472b6" opacity="0.6" />
-    <polygon points="150,68 165,28 128,42" fill="#d9933b" stroke="#ffffff" stroke-width="3" />
-    <polygon points="152,60 158,36 138,45" fill="#f472b6" opacity="0.6" />
-    <!-- Suspicious / Iconic Doge Side-Eye Gaze -->
-    <ellipse cx="74" cy="92" rx="9" ry="11" fill="#1e293b" />
-    <circle cx="71" cy="88" r="3.5" fill="#ffffff" />
-    <ellipse cx="126" cy="92" rx="9" ry="11" fill="#1e293b" />
-    <circle cx="123" cy="88" r="3.5" fill="#ffffff" />
-    <!-- Raised Worried / Judging Eyebrows -->
-    <path d="M 64 76 Q 74 72 84 76" stroke="#92400e" stroke-width="3" stroke-linecap="round" fill="none" />
-    <path d="M 116 76 Q 126 72 136 76" stroke="#92400e" stroke-width="3" stroke-linecap="round" fill="none" />
-    <!-- Black Nose & Cute Mouth -->
-    <polygon points="94,115 106,115 100,124" fill="#1e293b" />
-    <path d="M 92 128 Q 100 132 108 128" stroke="#1e293b" stroke-width="2.5" fill="none" stroke-linecap="round" />
-    <!-- Classic Doge Caption: "much wow" -->
-    <text x="18" y="42" font-family="'Comic Sans MS', sans-serif" font-weight="bold" font-size="14" fill="#ec4899">wow</text>
-    <text x="135" y="168" font-family="'Comic Sans MS', sans-serif" font-weight="bold" font-size="13" fill="#06b6d4">much happy</text>
+    <!-- Floating Sparkles -->
+    <path class="sparkle" style="transform-origin: 22px 90px;" d="M22 84 L24 88 L28 90 L24 92 L22 96 L20 92 L16 90 L20 88 Z" fill="#fbbf24" />
+    <path class="sparkle" style="transform-origin: 178px 85px; animation-delay: 0.7s;" d="M178 79 L180 83 L184 85 L180 87 L178 91 L176 87 L172 85 L176 83 Z" fill="#f43f5e" />
+
+    <!-- Animated Head & Ears Group -->
+    <g class="doge-body">
+      <!-- White Die-Cut Border / Outline -->
+      <ellipse cx="100" cy="108" rx="74" ry="67" fill="#ffffff" stroke="#cbd5e1" stroke-width="4" />
+
+      <!-- Doge Face Fur -->
+      <ellipse cx="100" cy="108" rx="68" ry="60" fill="#e0a353" />
+
+      <!-- White Muzzle / Cheeks -->
+      <ellipse cx="100" cy="125" rx="44" ry="34" fill="#fdfbf7" />
+      <path d="M 68 110 C 60 70, 75 40, 95 65" fill="#fdfbf7" />
+      <path d="M 132 110 C 140 70, 125 40, 105 65" fill="#fdfbf7" />
+
+      <!-- Pointy Shiba Ears -->
+      <g class="ear-left">
+        <polygon points="50,68 35,28 72,42" fill="#d9933b" stroke="#ffffff" stroke-width="3" />
+        <polygon points="48,60 42,36 62,45" fill="#f472b6" opacity="0.6" />
+      </g>
+      <g class="ear-right">
+        <polygon points="150,68 165,28 128,42" fill="#d9933b" stroke="#ffffff" stroke-width="3" />
+        <polygon points="152,60 158,36 138,45" fill="#f472b6" opacity="0.6" />
+      </g>
+
+      <!-- Animated Eyes -->
+      <g class="doge-eyes">
+        <!-- Left eye -->
+        <ellipse cx="74" cy="92" rx="9" ry="11" fill="#1e293b" />
+        <circle cx="71" cy="88" r="3.5" fill="#ffffff" />
+        <circle cx="76" cy="94" r="1.5" fill="#ffffff" opacity="0.8" />
+        <!-- Right eye -->
+        <ellipse cx="126" cy="92" rx="9" ry="11" fill="#1e293b" />
+        <circle cx="123" cy="88" r="3.5" fill="#ffffff" />
+        <circle cx="128" cy="94" r="1.5" fill="#ffffff" opacity="0.8" />
+      </g>
+
+      <!-- Raised Worried / Judging Eyebrows -->
+      <g class="doge-eyebrows">
+        <path d="M 64 75 Q 74 70 84 75" stroke="#92400e" stroke-width="3.5" stroke-linecap="round" fill="none" />
+        <path d="M 116 75 Q 126 70 136 75" stroke="#92400e" stroke-width="3.5" stroke-linecap="round" fill="none" />
+      </g>
+
+      <!-- Black Nose & Cute Mouth -->
+      <polygon points="93,114 107,114 100,123" fill="#1e293b" />
+      <path d="M 92 127 Q 100 132 108 127" stroke="#1e293b" stroke-width="2.5" fill="none" stroke-linecap="round" />
+    </g>
+
+    <!-- Classic Comic Sans Memetic Words -->
+    <g class="text-wow">
+      <text x="16" y="38" font-family="'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif" font-weight="900" font-size="16" stroke="#ffffff" stroke-width="3" paint-order="stroke fill">wow</text>
+    </g>
+    <g class="text-such">
+      <text x="135" y="44" font-family="'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif" font-weight="900" font-size="13" fill="#f59e0b" stroke="#ffffff" stroke-width="3" paint-order="stroke fill">such chat</text>
+    </g>
+    <g class="text-happy">
+      <text x="120" y="172" font-family="'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif" font-weight="900" font-size="14" stroke="#ffffff" stroke-width="3" paint-order="stroke fill">much happy</text>
+    </g>
   </g>
 </svg>

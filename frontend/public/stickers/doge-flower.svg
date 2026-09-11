@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Doge with Yellow Flower Animated Sticker -->
+  <defs>
+    <filter id="flower-doge-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.2" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes earWiggle {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(4deg); }
+    }
+    @keyframes flowerSpin {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(18deg) scale(1.08); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+    @keyframes dogeBlink {
+      0%, 90%, 100% { transform: scaleY(1); }
+      95% { transform: scaleY(0.1); }
+    }
+    @keyframes dogeBreathe {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    @keyframes sparkleGleam {
+      0%, 100% { opacity: 0.3; transform: scale(0.7); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    .dog-body {
+      transform-origin: 100px 150px;
+      animation: dogeBreathe 1.8s ease-in-out infinite;
+    }
+    .yellow-flower {
+      transform-origin: 100px 48px;
+      animation: flowerSpin 2.4s ease-in-out infinite;
+    }
+    .dog-eye {
+      transform-origin: 100px 92px;
+      animation: dogeBlink 3.2s infinite;
+    }
+    .sparkle-star {
+      transform-origin: 135px 35px;
+      animation: sparkleGleam 1.4s ease-in-out infinite;
+    }
+  </style>
+
+  <g filter="url(#flower-doge-shadow)">
+    <!-- Main Doge Group -->
+    <g class="dog-body">
+      <!-- Outer White Outline -->
+      <ellipse cx="100" cy="112" rx="68" ry="60" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+      <!-- Doge Fur Head -->
+      <ellipse cx="100" cy="112" rx="64" ry="56" fill="#e0a353" />
+
+      <!-- Ears -->
+      <polygon points="46,72 32,32 72,48" fill="#d9933b" stroke="#ffffff" stroke-width="3" />
+      <polygon points="46,65 38,40 60,50" fill="#f472b6" opacity="0.6" />
+      <polygon points="154,72 168,32 128,48" fill="#d9933b" stroke="#ffffff" stroke-width="3" />
+      <polygon points="154,65 162,40 140,50" fill="#f472b6" opacity="0.6" />
+
+      <!-- White Cheeks / Muzzle -->
+      <ellipse cx="100" cy="128" rx="42" ry="32" fill="#fdfbf7" />
+      <path d="M 68 112 C 60 78, 75 52, 95 72" fill="#fdfbf7" />
+      <path d="M 132 112 C 140 78, 125 52, 105 72" fill="#fdfbf7" />
+
+      <!-- Blinking Round Eyes -->
+      <g class="dog-eye">
+        <ellipse cx="74" cy="94" rx="9" ry="11" fill="#1e293b" />
+        <circle cx="71" cy="90" r="3.5" fill="#ffffff" />
+        <ellipse cx="126" cy="94" rx="9" ry="11" fill="#1e293b" />
+        <circle cx="123" cy="90" r="3.5" fill="#ffffff" />
+      </g>
+
+      <!-- Soft Eyebrows -->
+      <ellipse cx="72" cy="78" rx="7" ry="5" fill="#fdfbf7" opacity="0.9" />
+      <ellipse cx="128" cy="78" rx="7" ry="5" fill="#fdfbf7" opacity="0.9" />
+
+      <!-- Black Nose & Cute Mouth -->
+      <polygon points="94,116 106,116 100,125" fill="#1e293b" />
+      <path d="M 90 128 Q 100 134 110 128" stroke="#1e293b" stroke-width="2.5" fill="none" stroke-linecap="round" />
+
+      <!-- Rosy Cheeks -->
+      <circle cx="62" cy="115" r="7" fill="#f43f5e" opacity="0.35" />
+      <circle cx="138" cy="115" r="7" fill="#f43f5e" opacity="0.35" />
+    </g>
+
+    <!-- Animated Yellow Daisy Flower on Doge's Head -->
+    <g class="yellow-flower">
+      <!-- White Petals Behind for Contrast -->
+      <circle cx="100" cy="48" r="30" fill="#ffffff" opacity="0.9" filter="blur(1px)" />
+
+      <!-- Daisy Petals (Yellow/Gold) -->
+      <g fill="#facc15" stroke="#eab308" stroke-width="1.5">
+        <ellipse cx="100" cy="24" rx="7" ry="14" />
+        <ellipse cx="100" cy="72" rx="7" ry="14" />
+        <ellipse cx="76" cy="48" rx="14" ry="7" />
+        <ellipse cx="124" cy="48" rx="14" ry="7" />
+        <ellipse cx="83" cy="31" rx="8" ry="14" transform="rotate(-45 83 31)" />
+        <ellipse cx="117" cy="65" rx="8" ry="14" transform="rotate(-45 117 65)" />
+        <ellipse cx="117" cy="31" rx="8" ry="14" transform="rotate(45 117 31)" />
+        <ellipse cx="83" cy="65" rx="8" ry="14" transform="rotate(45 83 65)" />
+      </g>
+      <!-- Flower Golden Center -->
+      <circle cx="100" cy="48" r="12" fill="#ea580c" stroke="#c2410c" stroke-width="2" />
+      <circle cx="97" cy="45" r="3" fill="#fed7aa" />
+    </g>
+
+    <!-- Sparkle Stars -->
+    <g class="sparkle-star">
+      <polygon points="145,28 148,34 154,35 149,40 151,46 145,43 139,46 141,40 136,35 142,34" fill="#fbbf24" stroke="#ffffff" stroke-width="1" />
+    </g>
+  </g>
+</svg>

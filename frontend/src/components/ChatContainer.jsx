@@ -10,6 +10,7 @@ import ImageModal from "./ImageModal";
 import AudioMessagePlayer from "./AudioMessagePlayer";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatMessageTime, formatDateDivider } from "../lib/utils";
+import { addStickerToRecents } from "./StickerPicker";
 
 const QUICK_EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🔥"];
 
@@ -155,36 +156,26 @@ const ChatContainer = () => {
   const handleSaveSticker = (stickerUrl) => {
     if (!stickerUrl) return;
     try {
-      const LOCAL_STORAGE_CUSTOM = "wa_custom_stickers";
+      addStickerToRecents(stickerUrl);
       const LOCAL_STORAGE_FAVORITES = "wa_favorite_stickers";
 
-      const customSticker = {
-        id: `saved-${Date.now()}`,
+      const savedSticker = {
+        id: `fav-${Date.now()}`,
         name: "Saved Sticker",
         url: stickerUrl,
-        isCustom: true,
       };
-
-      const existingCustom = JSON.parse(
-        localStorage.getItem(LOCAL_STORAGE_CUSTOM) || "[]"
-      );
-      const updatedCustom = [
-        customSticker,
-        ...existingCustom.filter((s) => s.url !== stickerUrl),
-      ].slice(0, 50);
-      localStorage.setItem(LOCAL_STORAGE_CUSTOM, JSON.stringify(updatedCustom));
 
       const existingFavs = JSON.parse(
         localStorage.getItem(LOCAL_STORAGE_FAVORITES) || "[]"
       );
       const updatedFavs = [
-        customSticker,
-        ...existingFavs.filter((s) => s.url !== stickerUrl),
+        savedSticker,
+        ...existingFavs.filter((s) => (typeof s === "string" ? s : s.url) !== stickerUrl),
       ].slice(0, 50);
       localStorage.setItem(LOCAL_STORAGE_FAVORITES, JSON.stringify(updatedFavs));
 
       window.dispatchEvent(new Event("wa_stickers_updated"));
-      toast.success("Sticker saved to your collection! ⭐");
+      toast.success("Sticker saved to Favorites! ⭐");
     } catch (err) {
       console.error("Failed to save sticker", err);
     }
@@ -547,8 +538,8 @@ const ChatContainer = () => {
                             src={message.sticker}
                             alt="Sticker"
                             referrerPolicy="no-referrer"
-                            className="w-28 h-28 sm:w-36 sm:h-36 max-w-[160px] max-h-[160px] object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-200 pointer-events-none"
-                            loading="lazy"
+                            decoding="async"
+                            className="w-28 h-28 sm:w-36 sm:h-36 max-w-[160px] max-h-[160px] object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-200 pointer-events-none select-none"
                           />
 
                           {/* Quick "Save ⭐" hover badge on the sticker */}

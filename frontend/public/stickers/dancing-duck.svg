@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Dancing Duck Animated Sticker -->
+  <defs>
+    <filter id="duck-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes duckGroove {
+      0% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-8px) rotate(-8deg); }
+      50% { transform: translateY(0) rotate(0deg); }
+      75% { transform: translateY(-8px) rotate(8deg); }
+      100% { transform: translateY(0) rotate(0deg); }
+    }
+    @keyframes duckFeetL {
+      0%, 100% { transform: translateY(0) scaleY(1); }
+      50% { transform: translateY(-6px) scaleY(0.9); }
+    }
+    @keyframes duckFeetR {
+      0%, 100% { transform: translateY(-6px) scaleY(0.9); }
+      50% { transform: translateY(0) scaleY(1); }
+    }
+    @keyframes capBrim {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(3deg); }
+    }
+    .duck-body {
+      transform-origin: 100px 150px;
+      animation: duckGroove 0.45s ease-in-out infinite;
+    }
+    .foot-left {
+      transform-origin: 75px 175px;
+      animation: duckFeetL 0.45s ease-in-out infinite;
+    }
+    .foot-right {
+      transform-origin: 125px 175px;
+      animation: duckFeetR 0.45s ease-in-out infinite;
+    }
+  </style>
+
+  <g filter="url(#duck-shadow)">
+    <!-- Dancing Feet -->
+    <g class="foot-left">
+      <ellipse cx="78" cy="172" rx="16" ry="7" fill="#f97316" stroke="#ea580c" stroke-width="2" />
+    </g>
+    <g class="foot-right">
+      <ellipse cx="122" cy="172" rx="16" ry="7" fill="#f97316" stroke="#ea580c" stroke-width="2" />
+    </g>
+
+    <!-- Main Duck Body & Head -->
+    <g class="duck-body">
+      <!-- White Sticker Border -->
+      <path d="M 60 145 C 45 125, 45 85, 65 65 C 75 45, 125 45, 135 65 C 155 85, 155 125, 140 145 C 125 168, 75 168, 60 145 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="5" />
+
+      <!-- Plump Duck Body -->
+      <ellipse cx="100" cy="120" rx="46" ry="40" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" />
+
+      <!-- Cute Duck Wings -->
+      <path d="M 54 112 Q 40 125 58 135 Z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2" />
+      <path d="M 146 112 Q 160 125 142 135 Z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2" />
+
+      <!-- Duck Head -->
+      <circle cx="100" cy="80" r="34" fill="#ffffff" />
+
+      <!-- Blue Baseball Cap (Backwards) -->
+      <path d="M 72 74 Q 100 50 128 74 L 126 84 Q 100 68 74 84 Z" fill="#2563eb" stroke="#1d4ed8" stroke-width="2" />
+      <circle cx="100" cy="58" r="4" fill="#60a5fa" />
+      <!-- Cap Brim pointing back -->
+      <ellipse cx="64" cy="74" rx="14" ry="4" fill="#1e40af" transform="rotate(-15 64 74)" />
+
+      <!-- Happy Curved Eyes -->
+      <path d="M 82 82 Q 90 76 96 82" stroke="#1e293b" stroke-width="3" fill="none" stroke-linecap="round" />
+      <path d="M 104 82 Q 110 76 118 82" stroke="#1e293b" stroke-width="3" fill="none" stroke-linecap="round" />
+
+      <!-- Duck Orange Beak -->
+      <ellipse cx="100" cy="94" rx="18" ry="10" fill="#f97316" stroke="#ea580c" stroke-width="2" />
+      <circle cx="94" cy="92" r="1.5" fill="#c2410c" />
+      <circle cx="106" cy="92" r="1.5" fill="#c2410c" />
+
+      <!-- Rosy Cheeks -->
+      <circle cx="78" cy="92" r="5" fill="#fda4af" opacity="0.8" />
+      <circle cx="122" cy="92" r="5" fill="#fda4af" opacity="0.8" />
+    </g>
+  </g>
+</svg>

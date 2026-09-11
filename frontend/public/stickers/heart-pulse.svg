@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Animated Pulsing Love Heart Sticker -->
+  <defs>
+    <filter id="heart-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#f43f5e" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      14% { transform: scale(1.18); }
+      28% { transform: scale(1.05); }
+      42% { transform: scale(1.22); }
+      70% { transform: scale(1); }
+    }
+    @keyframes floatMini1 {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+      50% { opacity: 1; transform: translate(-15px, -25px) scale(1); }
+      100% { opacity: 0; transform: translate(-25px, -50px) scale(1.2); }
+    }
+    @keyframes floatMini2 {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+      50% { opacity: 1; transform: translate(18px, -28px) scale(1); }
+      100% { opacity: 0; transform: translate(30px, -55px) scale(1.2); }
+    }
+    .main-heart {
+      transform-origin: 100px 105px;
+      animation: heartbeat 1.1s ease-in-out infinite;
+    }
+    .mini-heart-left {
+      animation: floatMini1 1.6s ease-out infinite;
+    }
+    .mini-heart-right {
+      animation: floatMini2 1.6s ease-out 0.8s infinite;
+    }
+  </style>
+
+  <g filter="url(#heart-shadow)">
+    <!-- Floating Mini Hearts -->
+    <path d="M 50 70 C 50 60, 35 60, 35 72 C 35 85, 50 95, 50 95 C 50 95, 65 85, 65 72 C 65 60, 50 60, 50 70 Z" fill="#ec4899" class="mini-heart-left" />
+    <path d="M 150 70 C 150 60, 135 60, 135 72 C 135 85, 150 95, 150 95 C 150 95, 165 85, 165 72 C 165 60, 150 60, 150 70 Z" fill="#f43f5e" class="mini-heart-right" />
+
+    <!-- Pulsing Main Heart -->
+    <g class="main-heart">
+      <!-- White Sticker Border -->
+      <path d="M 100 62 C 78 20, 22 42, 22 88 C 22 132, 75 162, 100 180 C 125 162, 178 132, 178 88 C 178 42, 122 20, 100 62 Z" fill="#ffffff" stroke="#fecdd3" stroke-width="6" stroke-linejoin="round" />
+
+      <!-- Rich Crimson/Rose Heart -->
+      <path d="M 100 66 C 80 26, 26 46, 26 90 C 26 130, 78 158, 100 176 C 122 158, 174 130, 174 90 C 174 46, 120 26, 100 66 Z" fill="#e11d48" />
+
+      <!-- Vibrant Gradient Highlights -->
+      <path d="M 100 66 C 84 34, 38 48, 32 85 C 52 75, 80 82, 100 115 C 120 82, 148 75, 168 85 C 162 48, 116 34, 100 66 Z" fill="#f43f5e" opacity="0.8" />
+
+      <!-- Glossy Light Reflection -->
+      <ellipse cx="60" cy="72" rx="16" ry="9" fill="#ffffff" opacity="0.45" transform="rotate(-35 60 72)" />
+      <circle cx="48" cy="85" r="4" fill="#ffffff" opacity="0.4" />
+    </g>
+  </g>
+</svg>

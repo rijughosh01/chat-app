@@ -45,6 +45,20 @@ em-emoji-picker {
   background: rgba(128, 128, 128, 0.45);
 }
 
+/* Zero-width scrollbar utility (Prevents native ugly horizontal scrollbars on Windows/Chrome) */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
 /* WhatsApp Message Bubbles: Perfect Theme-Aware Contrast */
 .wa-bubble-outgoing {
   background-color: #d9fdd3;

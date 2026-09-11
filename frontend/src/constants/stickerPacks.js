@@ -5,6 +5,18 @@ export const STICKER_PACKS = [
   { id: "recents", name: "Recents", icon: "Clock", isSpecial: true },
   { id: "favorites", name: "Favorites", icon: "Star", isSpecial: true },
   {
+    id: "animated",
+    name: "⚡ Animated",
+    icon: "Zap",
+    avatar: "/stickers/animated-icon.svg",
+  },
+  {
+    id: "unlimited",
+    name: "🌐 Unlimited (Live)",
+    icon: "Globe",
+    avatar: "/stickers/globe.svg",
+  },
+  {
     id: "memes",
     name: "Viral Memes",
     icon: "Smile",
@@ -42,75 +54,163 @@ export const STICKER_PACKS = [
 
 export const CURATED_STICKERS = [
   // =======================================================
-  // --- Pack 1: Viral Memes (Guaranteed Local SVGs) ---
+  // --- Pack 0: ⚡ Animated Stickers (Pure Vector SVGs with 60fps Loop) ---
   // =======================================================
   {
+    id: "anim-bongo-cat",
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets"],
+    name: "Bongo Cat",
+    tags: ["bongo", "cat", "animated", "drums", "music", "tap", "cute", "meme", "kitty"],
+    url: "/stickers/bongo-cat.svg",
+    isAnimated: true,
+    favorite: true,
+  },
+  {
+    id: "anim-party-parrot",
+    packId: "animated",
+    packIds: ["animated", "memes"],
+    name: "Party Parrot",
+    tags: ["party", "parrot", "animated", "rainbow", "dance", "celebrate", "meme", "vibe"],
+    url: "/stickers/party-parrot.svg",
+    isAnimated: true,
+    favorite: true,
+  },
+  {
+    id: "anim-doge-flower",
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets"],
+    name: "Doge Sunflower",
+    tags: ["doge", "flower", "sunflower", "animated", "shiba", "cute", "blink", "meme", "dog"],
+    url: "/stickers/doge-flower.svg",
+    isAnimated: true,
+    favorite: true,
+  },
+  {
+    id: "anim-dancing-duck",
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets"],
+    name: "Dancing Duck",
+    tags: ["duck", "dancing", "animated", "shuba", "groove", "waddle", "cute", "meme", "bird"],
+    url: "/stickers/dancing-duck.svg",
+    isAnimated: true,
+    favorite: true,
+  },
+  {
+    id: "anim-nyan-cat",
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets"],
+    name: "Nyan Cat Rainbow",
+    tags: ["nyan", "cat", "rainbow", "animated", "space", "stars", "cute", "poptart", "meme"],
+    url: "/stickers/nyan-cat.svg",
+    isAnimated: true,
+    favorite: true,
+  },
+  {
+    id: "anim-pikachu-shock",
+    packId: "animated",
+    packIds: ["animated", "memes", "expressions"],
+    name: "Surprised Pikachu",
+    tags: ["pikachu", "shock", "surprised", "animated", "pokemon", "omg", "lightning", "meme", "wow"],
+    url: "/stickers/pikachu-shock.svg",
+    isAnimated: true,
+    favorite: true,
+  },
+  {
+    id: "anim-heart-pulse",
+    packId: "animated",
+    packIds: ["animated", "love"],
+    name: "Pulsing Love Heart",
+    tags: ["heart", "pulse", "animated", "love", "beating", "crush", "glow", "romance", "valentine"],
+    url: "/stickers/heart-pulse.svg",
+    isAnimated: true,
+    favorite: true,
+  },
+  {
     id: "meme-popcat",
-    packId: "memes",
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets"],
     name: "Pop Cat",
-    tags: ["popcat", "cat", "meme", "mouth", "pop", "open", "cute"],
+    tags: ["popcat", "cat", "meme", "mouth", "pop", "open", "cute", "animated"],
     url: "/stickers/popcat.svg",
+    isAnimated: true,
     favorite: true,
   },
   {
     id: "meme-pepe-cool",
-    packId: "memes",
-    name: "Cool Pepe",
-    tags: ["pepe", "cool", "sunglasses", "swag", "deal with it", "frog", "meme"],
+    packId: "animated",
+    packIds: ["animated", "memes", "expressions"],
+    name: "Cool Pepe Deal With It",
+    tags: ["pepe", "cool", "sunglasses", "swag", "deal with it", "frog", "meme", "animated"],
     url: "/stickers/pepe-cool.svg",
+    isAnimated: true,
     favorite: true,
   },
   {
     id: "meme-crying-cat",
-    packId: "memes",
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets", "expressions"],
     name: "Crying Cat Thumbs Up",
-    tags: ["crying", "cat", "thumbs up", "sad", "pain", "ok", "meme", "tears"],
+    tags: ["crying", "cat", "thumbs up", "sad", "pain", "ok", "meme", "tears", "animated"],
     url: "/stickers/crying-cat.svg",
+    isAnimated: true,
     favorite: true,
   },
   {
     id: "meme-doge",
-    packId: "memes",
-    name: "Doge Shiba",
-    tags: ["doge", "shiba", "dog", "wow", "much happy", "meme"],
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets"],
+    name: "Doge Shiba Wow",
+    tags: ["doge", "shiba", "dog", "wow", "much happy", "meme", "animated"],
     url: "/stickers/doge.svg",
+    isAnimated: true,
     favorite: true,
   },
   {
     id: "meme-anya-smug",
-    packId: "memes",
+    packId: "animated",
+    packIds: ["animated", "memes", "expressions"],
     name: "Anya Smug Heh",
-    tags: ["anya", "spy x family", "heh", "smug", "anime", "smile", "meme"],
+    tags: ["anya", "spy x family", "heh", "smug", "anime", "smile", "meme", "animated"],
     url: "/stickers/anya-smug.svg",
+    isAnimated: true,
     favorite: true,
   },
   {
     id: "meme-mochi-cat",
-    packId: "memes",
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets"],
     name: "Mochi Peach Cat",
-    tags: ["mochi", "peach", "cat", "happy", "cute", "sparkle"],
+    tags: ["mochi", "peach", "cat", "happy", "cute", "sparkle", "animated"],
     url: "/stickers/mochi-cat.svg",
+    isAnimated: true,
   },
   {
     id: "meme-milk-mocha",
-    packId: "memes",
+    packId: "animated",
+    packIds: ["animated", "memes", "love"],
     name: "Milk & Mocha Hug",
-    tags: ["milk", "mocha", "hug", "love", "bears", "cuddle"],
+    tags: ["milk", "mocha", "hug", "love", "bears", "cuddle", "animated"],
     url: "/stickers/milk-mocha.svg",
+    isAnimated: true,
   },
   {
     id: "meme-gigachad",
-    packId: "memes",
+    packId: "animated",
+    packIds: ["animated", "memes"],
     name: "Gigachad Sigma",
-    tags: ["gigachad", "chad", "sigma", "jawline", "meme", "buff", "male"],
+    tags: ["gigachad", "chad", "sigma", "jawline", "meme", "buff", "male", "animated"],
     url: "/stickers/gigachad.svg",
+    isAnimated: true,
   },
   {
     id: "meme-capybara",
-    packId: "memes",
+    packId: "animated",
+    packIds: ["animated", "memes", "cats_pets"],
     name: "Chill Capybara",
-    tags: ["capybara", "chill", "orange", "relax", "ok i pull up", "meme"],
+    tags: ["capybara", "chill", "orange", "relax", "ok i pull up", "meme", "animated"],
     url: "/stickers/capybara.svg",
+    isAnimated: true,
   },
 
   // =======================================================
@@ -473,31 +573,54 @@ export const CURATED_STICKERS = [
   },
 ];
 
-// Live GIPHY Sticker Search Engine (Returns guaranteed transparent web stickers)
+// Live Online Transparent Sticker Cloud Engine (Unlimited Animated Stickers)
 const GIPHY_API_KEY = "sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh";
 
-export async function searchLiveStickers(query) {
-  if (!query || !query.trim()) return [];
+export const UNLIMITED_CATEGORIES = [
+  { id: "trending", label: "🔥 Trending", query: "" },
+  { id: "cats", label: "🐱 Cats", query: "cat meme" },
+  { id: "doge", label: "🐶 Doge", query: "doge" },
+  { id: "memes", label: "😂 Memes", query: "meme" },
+  { id: "love", label: "💖 Love", query: "love heart" },
+  { id: "anime", label: "✨ Anime", query: "anime reaction" },
+  { id: "pepe", label: "🐸 Pepe", query: "pepe frog" },
+  { id: "dance", label: "💃 Dance", query: "dance" },
+  { id: "gaming", label: "🎮 Gaming", query: "gaming" },
+  { id: "party", label: "🎉 Party", query: "party" },
+  { id: "reactions", label: "😮 Reactions", query: "reaction wow" },
+  { id: "sad", label: "😭 Crying", query: "crying sad" },
+];
+
+export async function fetchLiveStickers({ query = "", offset = 0, limit = 28 } = {}) {
   try {
-    const res = await fetch(
-      `https://api.giphy.com/v1/stickers/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(
-        query.trim()
-      )}&limit=24&rating=g`
-    );
+    const isTrending = !query || !query.trim() || query === "trending";
+    const endpoint = isTrending
+      ? `https://api.giphy.com/v1/stickers/trending?api_key=${GIPHY_API_KEY}&limit=${limit}&offset=${offset}&rating=g`
+      : `https://api.giphy.com/v1/stickers/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(
+          query.trim()
+        )}&limit=${limit}&offset=${offset}&rating=g`;
+
+    const res = await fetch(endpoint);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.data || []).map((item) => ({
-      id: `giphy-${item.id}`,
-      name: item.title || "Sticker",
+      id: `giphy-${item.id}-${offset}`,
+      name: item.title || "Animated Sticker",
       url:
         item.images?.fixed_height?.url ||
         item.images?.fixed_width?.url ||
         item.images?.original?.url,
-      tags: [query.toLowerCase()],
+      tags: query ? [query.toLowerCase()] : ["trending"],
       isLive: true,
+      isAnimated: true,
     }));
-  } catch (error) {
-    console.error("Giphy sticker search error:", error);
+  } catch (err) {
+    console.error("Fetch live stickers error:", err);
     return [];
   }
 }
+
+export async function searchLiveStickers(query, offset = 0, limit = 28) {
+  return fetchLiveStickers({ query, offset, limit });
+}
+
