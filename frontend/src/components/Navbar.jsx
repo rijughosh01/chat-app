@@ -31,28 +31,45 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {authUser ? (
+              <Link
+                to="/"
+                className="btn btn-sm btn-ghost gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold"
+                title="Open Chat"
+              >
+                <MessagesSquare className="size-4" />
+                <span className="hidden sm:inline">Chat</span>
+              </Link>
+            ) : (
+              <Link
+                to="/landing"
+                className="btn btn-sm btn-ghost gap-1.5 text-xs text-base-content/80 font-medium"
+                title="Product Overview"
+              >
+                <span className="hidden sm:inline">Overview</span>
+              </Link>
+            )}
+
             <Link
-              to={"/settings"}
-              className={`
-              btn btn-sm gap-2 transition-colors
-              
-              `}
+              to="/settings"
+              className="btn btn-sm btn-ghost gap-1.5 text-xs text-base-content/80"
+              title="Themes & Settings"
             >
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
+              <span className="hidden sm:inline">Themes</span>
             </Link>
 
-            {authUser && (
+            {authUser ? (
               <>
                 <Link
-                  to={"/profile"}
+                  to="/profile"
                   className="flex items-center gap-2 p-1.5 hover:bg-base-200 rounded-lg transition-colors"
                   title="Your Profile"
                 >
                   <img
                     src={authUser.profilePic || "/avatar.png"}
                     alt="Profile"
-                    className="size-7 rounded-full object-cover border border-base-300"
+                    className="size-7 rounded-full object-cover border border-base-300 ring-1 ring-emerald-500/30"
                   />
                   <span className="text-sm font-medium hidden sm:inline">
                     {authUser.fullName}
@@ -66,6 +83,22 @@ const Navbar = () => {
                 >
                   <LogOut className="size-4" />
                 </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="btn btn-sm btn-ghost text-xs text-base-content/80 hover:text-base-content"
+                >
+                  Sign In
+                </Link>
+
+                <Link
+                  to="/signup"
+                  className="btn btn-sm bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-full text-xs shadow-xs px-3.5 transition-all"
+                >
+                  Get Started
+                </Link>
               </>
             )}
           </div>
