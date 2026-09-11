@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Pop Cat Animated Transparent Sticker -->
+  <defs>
+    <filter id="pop-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes headBob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    @keyframes popOpen {
+      0%, 45% { opacity: 0; }
+      50%, 95% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes popClosed {
+      0%, 45% { opacity: 1; }
+      50%, 95% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .animated-head {
+      transform-origin: 100px 160px;
+      animation: headBob 0.45s ease-in-out infinite;
+    }
+    .mouth-open-layer {
+      animation: popOpen 0.45s step-end infinite;
+    }
+    .mouth-closed-layer {
+      animation: popClosed 0.45s step-end infinite;
+    }
+  </style>
+
+  <g filter="url(#pop-shadow)" class="animated-head">
+    <!-- White Sticker Outline -->
+    <path d="M 42 165 C 32 155, 26 125, 28 95 C 29 80, 24 50, 48 30 C 62 44, 76 56, 92 53 C 108 50, 130 38, 148 28 C 172 48, 168 78, 170 95 C 173 125, 166 155, 156 165 C 130 176, 68 176, 42 165 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="4" stroke-linejoin="round" />
+    <!-- Cat Head Base (Cream) -->
+    <path d="M 48 160 C 38 150, 34 125, 36 98 C 37 84, 32 58, 52 40 C 64 52, 76 60, 92 58 C 108 56, 126 46, 144 38 C 164 56, 160 82, 162 98 C 164 125, 158 150, 150 160 C 126 170, 72 170, 48 160 Z" fill="#edd6b6" />
+    <!-- Pink Inner Ears -->
+    <polygon points="46,75 54,48 72,62" fill="#f8b4b4" />
+    <polygon points="152,75 144,46 126,60" fill="#f8b4b4" />
+
+    <!-- Cat Eyes -->
+    <ellipse cx="68" cy="85" rx="14" ry="16" fill="#1e293b" />
+    <circle cx="64" cy="80" r="5" fill="#ffffff" />
+    <circle cx="72" cy="90" r="2.5" fill="#ffffff" />
+    <ellipse cx="130" cy="85" rx="14" ry="16" fill="#1e293b" />
+    <circle cx="126" cy="80" r="5" fill="#ffffff" />
+    <circle cx="134" cy="90" r="2.5" fill="#ffffff" />
+
+    <!-- STATE 1: MOUTH CLOSED -->
+    <g class="mouth-closed-layer">
+      <!-- Closed cute pout mouth -->
+      <path d="M 86 118 Q 98 126 100 120 Q 102 126 114 118" stroke="#1e293b" stroke-width="3.5" fill="none" stroke-linecap="round" />
+      <polygon points="97,114 103,114 100,117" fill="#f43f5e" />
+    </g>
+
+    <!-- STATE 2: MOUTH WIDE OPEN (POP!) -->
+    <g class="mouth-open-layer">
+      <!-- Wide Open O-Mouth -->
+      <ellipse cx="99" cy="122" rx="33" ry="27" fill="#7f1d1d" stroke="#1e293b" stroke-width="3.5" />
+      <path d="M 80 134 C 88 118, 110 118, 118 134 C 112 142, 86 142, 80 134 Z" fill="#f43f5e" />
+    </g>
+
+    <!-- Whiskers -->
+    <line x1="28" y1="108" x2="52" y2="114" stroke="#78716c" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="26" y1="122" x2="50" y2="124" stroke="#78716c" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="170" y1="108" x2="146" y2="114" stroke="#78716c" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="172" y1="122" x2="148" y2="124" stroke="#78716c" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+</svg>

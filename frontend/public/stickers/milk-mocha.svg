@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Milk & Mocha Animated Transparent Sticker -->
+  <defs>
+    <filter id="bears-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes heartPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.25) translateY(-4px); }
+    }
+    @keyframes bearSway {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-1.5deg); }
+      75% { transform: rotate(1.5deg); }
+    }
+    .heart-anim-1 {
+      transform-origin: 100px 52px;
+      animation: heartPulse 0.7s ease-in-out infinite;
+    }
+    .heart-anim-2 {
+      transform-origin: 140px 42px;
+      animation: heartPulse 0.7s ease-in-out infinite 0.35s;
+    }
+    .bears-group {
+      transform-origin: 100px 170px;
+      animation: bearSway 1.2s ease-in-out infinite;
+    }
+  </style>
+
+  <g filter="url(#bears-shadow)" class="bears-group">
+    <!-- White Die-Cut Border -->
+    <path d="M 40 170 C 20 140, 25 80, 55 58 C 75 42, 125 42, 145 58 C 175 80, 180 140, 160 170 C 135 185, 65 185, 40 170 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="5" stroke-linejoin="round" />
+    
+    <!-- Mocha Bear (Brown Bear on the right) -->
+    <ellipse cx="125" cy="115" rx="42" ry="40" fill="#92400e" />
+    <circle cx="155" cy="80" r="14" fill="#92400e" />
+    <circle cx="155" cy="80" r="8" fill="#d97706" />
+    <circle cx="105" cy="80" r="14" fill="#92400e" />
+    <ellipse cx="125" cy="122" rx="20" ry="14" fill="#fef3c7" />
+    <ellipse cx="125" cy="118" rx="5" ry="4" fill="#451a03" />
+    <path d="M 125 122 L 125 127" stroke="#451a03" stroke-width="2" />
+    <!-- Mocha closed happy hugging eyes -->
+    <path d="M 112 110 Q 118 104 124 110" stroke="#451a03" stroke-width="3" fill="none" stroke-linecap="round" />
+    <path d="M 132 110 Q 138 104 144 110" stroke="#451a03" stroke-width="3" fill="none" stroke-linecap="round" />
+
+    <!-- Milk Bear (White Bear hugging Mocha on the left) -->
+    <ellipse cx="75" cy="115" rx="40" ry="38" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" />
+    <circle cx="45" cy="82" r="13" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" />
+    <circle cx="45" cy="82" r="7" fill="#fbcfe8" />
+    <circle cx="95" cy="82" r="13" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" />
+    <circle cx="95" cy="82" r="7" fill="#fbcfe8" />
+    <ellipse cx="62" cy="110" rx="4" ry="5" fill="#1e293b" />
+    <ellipse cx="82" cy="110" rx="4" ry="5" fill="#1e293b" />
+    <circle cx="60" cy="108" r="1.5" fill="#ffffff" />
+    <circle cx="80" cy="108" r="1.5" fill="#ffffff" />
+    <ellipse cx="54" cy="120" rx="7" ry="4" fill="#fda4af" />
+    <ellipse cx="90" cy="120" rx="7" ry="4" fill="#fda4af" />
+    <ellipse cx="72" cy="118" rx="10" ry="7" fill="#f1f5f9" />
+    <polygon points="70,116 74,116 72,119" fill="#1e293b" />
+    <!-- Hugging Arm -->
+    <path d="M 85 130 C 105 130, 115 135, 118 142 C 112 148, 95 142, 80 140 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" />
+    
+    <!-- Animated Beating Love Hearts -->
+    <g class="heart-anim-1">
+      <path d="M 100 45 C 95 30, 80 35, 80 48 C 80 62, 100 75, 100 75 C 100 75, 120 62, 120 48 C 120 35, 105 30, 100 45 Z" fill="#ef4444" />
+    </g>
+    <g class="heart-anim-2">
+      <path d="M 140 38 C 137 28, 126 31, 126 40 C 126 50, 140 60, 140 60 C 140 60, 154 50, 154 40 C 154 31, 143 28, 140 38 Z" fill="#f43f5e" />
+    </g>
+  </g>
+</svg>

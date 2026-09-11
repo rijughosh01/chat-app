@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Chill Capybara with Orange on Head Transparent Sticker -->
+  <defs>
+    <filter id="capy-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.15" />
+    </filter>
+  </defs>
+  <g filter="url(#capy-shadow)">
+    <!-- White Die-Cut Border -->
+    <path d="M 45 160 C 35 125, 42 75, 70 55 C 85 45, 125 45, 145 60 C 165 80, 168 135, 155 165 C 130 180, 65 180, 45 160 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="5" stroke-linejoin="round" />
+    <!-- Capybara Brown Head / Snout Shape -->
+    <path d="M 50 155 C 40 120, 46 75, 75 60 C 90 50, 120 50, 140 65 C 160 85, 162 135, 150 160 C 125 175, 70 175, 50 155 Z" fill="#92572b" />
+    <path d="M 55 120 C 50 100, 65 85, 80 85 C 115 85, 145 95, 150 120 C 145 155, 65 155, 55 120 Z" fill="#78421a" />
+    <!-- Tiny Round Capybara Ears -->
+    <circle cx="68" cy="62" r="9" fill="#583114" stroke="#ffffff" stroke-width="2" />
+    <circle cx="140" cy="68" r="9" fill="#583114" stroke="#ffffff" stroke-width="2" />
+    <!-- Ultra Chill Half-Closed Zen Eyes (-_-) -->
+    <line x1="72" y1="88" x2="88" y2="88" stroke="#1f140e" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="126" y1="92" x2="142" y2="92" stroke="#1f140e" stroke-width="3.5" stroke-linecap="round" />
+    <!-- Big Square Snout & Nostrils -->
+    <ellipse cx="98" cy="128" rx="6" ry="4" fill="#1f140e" />
+    <ellipse cx="112" cy="128" rx="6" ry="4" fill="#1f140e" />
+    <!-- Peaceful Mouth line -->
+    <path d="M 105 133 L 105 142" stroke="#1f140e" stroke-width="3" stroke-linecap="round" />
+    <!-- The Iconic Yuzu/Orange with Leaf Balanced on Head -->
+    <circle cx="104" cy="38" r="18" fill="#f97316" stroke="#ffffff" stroke-width="3" />
+    <!-- Leaf -->
+    <path d="M 104 20 C 104 10, 118 12, 118 12 C 118 12, 114 24, 104 20 Z" fill="#22c55e" stroke="#ffffff" stroke-width="1.5" />
+    <!-- "ok i pull up" text badge -->
+    <rect x="42" y="165" width="116" height="18" rx="5" fill="#1f140e" stroke="#ffffff" stroke-width="2" />
+    <text x="100" y="178" font-family="sans-serif" font-weight="bold" font-size="10" fill="#f97316" text-anchor="middle">OK I PULL UP 🍊</text>
+  </g>
+</svg>

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Mochi Peach Cat Cheering Animated Transparent Sticker -->
+  <defs>
+    <filter id="mochi-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes mochiBounce {
+      0%, 100% { transform: translateY(0) scale(1, 1); }
+      30% { transform: translateY(-8px) scale(0.98, 1.04); }
+      50% { transform: translateY(0) scale(1.04, 0.96); }
+    }
+    @keyframes sparkleTwinkle {
+      0%, 100% { transform: scale(0.7) rotate(0deg); opacity: 0.4; }
+      50% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+    }
+    .mochi-bounce {
+      transform-origin: 100px 170px;
+      animation: mochiBounce 0.6s ease-in-out infinite;
+    }
+    .sparkle-1 {
+      transform-origin: 100px 48px;
+      animation: sparkleTwinkle 0.6s ease-in-out infinite;
+    }
+    .sparkle-2 {
+      transform-origin: 150px 93px;
+      animation: sparkleTwinkle 0.6s ease-in-out infinite 0.3s;
+    }
+  </style>
+
+  <g filter="url(#mochi-shadow)" class="mochi-bounce">
+    <!-- White Die-Cut Border -->
+    <ellipse cx="100" cy="115" rx="66" ry="56" fill="#ffffff" stroke="#e2e8f0" stroke-width="5" />
+    <!-- Mochi Cat Head (Super Soft White) -->
+    <ellipse cx="100" cy="115" rx="62" ry="52" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+    <!-- Cute Round Cat Ears -->
+    <polygon points="56,76 46,46 76,58" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+    <polygon points="54,70 48,52 68,60" fill="#fbcfe8" />
+    <polygon points="144,76 154,46 124,58" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+    <polygon points="146,70 152,52 132,60" fill="#fbcfe8" />
+    <!-- Cheerful Closed Happy Curve Eyes (^_^) -->
+    <path d="M 68 112 Q 78 100 88 112" stroke="#334155" stroke-width="4" fill="none" stroke-linecap="round" />
+    <path d="M 112 112 Q 122 100 132 112" stroke="#334155" stroke-width="4" fill="none" stroke-linecap="round" />
+    <!-- Soft Peach Blush Cheeks -->
+    <ellipse cx="64" cy="125" rx="12" ry="7" fill="#fda4af" opacity="0.8" />
+    <ellipse cx="136" cy="125" rx="12" ry="7" fill="#fda4af" opacity="0.8" />
+    <!-- Cat Mouth (Cat ":3" shape) -->
+    <path d="M 94 122 Q 100 126 106 122" stroke="#334155" stroke-width="3" fill="none" stroke-linecap="round" />
+    <!-- Tiny Cat Nose -->
+    <polygon points="98,118 102,118 100,121" fill="#f43f5e" />
+    <!-- Cheerful Raised Paws -->
+    <ellipse cx="50" cy="148" rx="12" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+    <ellipse cx="150" cy="148" rx="12" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+    <!-- Animated Love Sparkles -->
+    <g class="sparkle-1">
+      <polygon points="100,35 103,45 113,48 103,51 100,61 97,51 87,48 97,45" fill="#f59e0b" />
+    </g>
+    <g class="sparkle-2">
+      <polygon points="150,85 152,91 158,93 152,95 150,101 148,95 142,93 148,91" fill="#ec4899" />
+    </g>
+  </g>
+</svg>

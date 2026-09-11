@@ -414,6 +414,31 @@ export const useChatStore = create((set, get) => ({
 
       set({ users: updatedUsers, selectedUser: updatedSelected });
     });
+
+    socket.on("userProfileUpdated", ({ userId, profilePic, user }) => {
+      const { users, selectedUser } = get();
+      const updatedUsers = users.map((u) => {
+        if (u._id === userId) {
+          return {
+            ...u,
+            profilePic: profilePic || u.profilePic,
+            ...(user || {}),
+          };
+        }
+        return u;
+      });
+
+      const updatedSelected =
+        selectedUser?._id === userId
+          ? {
+              ...selectedUser,
+              profilePic: profilePic || selectedUser.profilePic,
+              ...(user || {}),
+            }
+          : selectedUser;
+
+      set({ users: updatedUsers, selectedUser: updatedSelected });
+    });
   },
 
   unsubscribeFromMessages: () => {
@@ -428,6 +453,7 @@ export const useChatStore = create((set, get) => ({
     socket.off("stopTyping");
     socket.off("userStatusChanged");
     socket.off("userPrivacyChanged");
+    socket.off("userProfileUpdated");
   },
 
   setSelectedUser: (selectedUser) => {

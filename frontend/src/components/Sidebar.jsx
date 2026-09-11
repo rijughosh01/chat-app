@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
@@ -48,7 +49,18 @@ const Sidebar = () => {
       {/* Header & Search */}
       <div className="border-b border-base-300/80 w-full p-3.5 space-y-2.5 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <Link
+              to="/profile"
+              className="relative group cursor-pointer flex-shrink-0"
+              title={`${authUser?.fullName || "You"} (Click to edit profile)`}
+            >
+              <img
+                src={authUser?.profilePic || "/avatar.png"}
+                alt={authUser?.fullName || "Your Profile"}
+                className="size-9 rounded-full object-cover border border-base-300 ring-2 ring-emerald-500/30 group-hover:ring-emerald-500 transition-all shadow-xs"
+              />
+            </Link>
             <span className="font-bold text-lg tracking-tight text-base-content">
               Chats
             </span>

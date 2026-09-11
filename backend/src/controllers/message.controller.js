@@ -123,6 +123,7 @@ export const sendMessage = async (req, res) => {
     if (sticker && sticker.startsWith("data:")) {
       const uploadResponse = await cloudinary.uploader.upload(sticker, {
         folder: "chat_stickers",
+        resource_type: "auto",
       });
       stickerUrl = uploadResponse.secure_url;
     }

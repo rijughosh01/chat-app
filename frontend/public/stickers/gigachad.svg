@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Gigachad Sigma Meme Transparent Sticker -->
+  <defs>
+    <filter id="chad-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+  <g filter="url(#chad-shadow)">
+    <!-- White Die-Cut Border -->
+    <path d="M 45 175 L 35 120 L 48 65 L 68 35 L 132 35 L 152 65 L 165 120 L 155 175 L 100 188 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" stroke-linejoin="round" />
+    <!-- Monochromatic Grayscale Sigma Chad Base -->
+    <path d="M 50 170 L 40 118 L 52 68 L 70 40 L 130 40 L 148 68 L 160 118 L 150 170 L 100 184 Z" fill="#334155" />
+    <!-- Hair Pompadour -->
+    <path d="M 68 40 C 65 25, 85 18, 100 22 C 115 18, 135 25, 132 40 C 120 38, 80 38, 68 40 Z" fill="#0f172a" />
+    <!-- Sharp Forehead and Brow Ridge -->
+    <polygon points="56,72 144,72 135,85 65,85" fill="#475569" />
+    <!-- Chiseled Cheekbones & Signature Jawline -->
+    <polygon points="45,118 68,135 100,180 132,135 155,118 140,110 100,125 60,110" fill="#64748b" />
+    <polygon points="68,135 100,180 100,150" fill="#94a3b8" />
+    <!-- Chiseled Cleft Chin -->
+    <line x1="100" y1="168" x2="100" y2="178" stroke="#0f172a" stroke-width="3" stroke-linecap="round" />
+    <!-- Intense Gaze / Eyes -->
+    <polygon points="68,88 88,88 82,96 72,96" fill="#0f172a" />
+    <polygon points="112,88 132,88 128,96 118,96" fill="#0f172a" />
+    <!-- Nose Shadow -->
+    <polygon points="98,82 104,82 106,120 94,120" fill="#1e293b" />
+    <!-- Stoic Mouth -->
+    <line x1="86" y1="138" x2="114" y2="138" stroke="#0f172a" stroke-width="4" stroke-linecap="round" />
+    <!-- Stubble Beards Lines -->
+    <path d="M 62 135 L 75 160 L 100 178 L 125 160 L 138 135" fill="none" stroke="#1e293b" stroke-width="3" stroke-dasharray="3,3" />
+    <!-- "SIGMA" / "CHAD" Label -->
+    <rect x="52" y="14" width="96" height="20" rx="6" fill="#0f172a" stroke="#ffffff" stroke-width="2" />
+    <text x="100" y="29" font-family="sans-serif" font-weight="900" font-size="12" fill="#38bdf8" text-anchor="middle" letter-spacing="2">GIGACHAD</text>
+  </g>
+</svg>

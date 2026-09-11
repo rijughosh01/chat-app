@@ -17,7 +17,7 @@ const SettingsPage = () => {
   const { authUser, updatePrivacySettings } = useAuthStore();
 
   return (
-    <div className="min-h-screen container mx-auto px-4 pt-20 pb-12 max-w-5xl">
+    <div className="min-h-[100dvh] w-full container mx-auto px-4 pt-20 pb-24 max-w-5xl">
       <div className="space-y-6">
         <div className="flex flex-col gap-1">
           <h2 className="text-lg font-semibold">Theme</h2>

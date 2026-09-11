@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Crying Cat Thumbs Up Animated Transparent Sticker -->
+  <defs>
+    <filter id="crying-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes tearFlow {
+      0% { transform: scaleY(0.7) translateY(-3px); opacity: 0.6; }
+      50% { transform: scaleY(1.1) translateY(2px); opacity: 1; }
+      100% { transform: scaleY(0.7) translateY(-3px); opacity: 0.6; }
+    }
+    @keyframes thumbBob {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-4px) rotate(-3deg); }
+    }
+    .tears-anim {
+      transform-origin: center top;
+      animation: tearFlow 0.6s ease-in-out infinite;
+    }
+    .thumb-anim {
+      transform-origin: 152px 155px;
+      animation: thumbBob 0.6s ease-in-out infinite;
+    }
+  </style>
+
+  <g filter="url(#crying-shadow)">
+    <!-- White Sticker Outline -->
+    <path d="M 45 155 C 30 140, 25 105, 32 75 C 22 55, 35 30, 56 38 C 72 45, 90 44, 105 44 C 125 44, 142 36, 158 48 C 172 65, 172 105, 162 135 C 175 140, 185 160, 170 180 C 150 185, 135 170, 125 165 C 100 172, 65 170, 45 155 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="4" stroke-linejoin="round" />
+    <!-- Cat Face Base (Fluffy Gray/White) -->
+    <path d="M 50 150 C 36 138, 32 105, 38 78 C 30 60, 42 38, 60 44 C 74 50, 92 48, 105 48 C 122 48, 138 42, 150 52 C 164 68, 164 105, 154 132 C 125 155, 75 158, 50 150 Z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2" />
+    <!-- Pink Inner Ears -->
+    <polygon points="46,70 54,50 68,60" fill="#fbcfe8" />
+    <polygon points="148,70 142,50 128,60" fill="#fbcfe8" />
+
+    <!-- Crying Watery Huge Glass Eyes -->
+    <circle cx="70" cy="85" r="16" fill="#38bdf8" />
+    <circle cx="70" cy="85" r="13" fill="#0284c7" />
+    <ellipse cx="66" cy="80" rx="5" ry="7" fill="#ffffff" />
+    <circle cx="76" cy="88" r="3.5" fill="#ffffff" />
+
+    <circle cx="125" cy="85" r="16" fill="#38bdf8" />
+    <circle cx="125" cy="85" r="13" fill="#0284c7" />
+    <ellipse cx="121" cy="80" rx="5" ry="7" fill="#ffffff" />
+    <circle cx="131" cy="88" r="3.5" fill="#ffffff" />
+
+    <!-- Animated Streaming Tears Flowing Down -->
+    <g class="tears-anim">
+      <path d="M 64 98 C 60 115, 68 135, 62 145 C 58 140, 56 120, 60 98 Z" fill="#38bdf8" opacity="0.9" />
+      <path d="M 128 98 C 132 115, 126 135, 132 145 C 136 140, 138 120, 134 98 Z" fill="#38bdf8" opacity="0.9" />
+    </g>
+
+    <!-- Grimacing Wobbly Sad Mouth (Painful Smile) -->
+    <path d="M 78 122 Q 98 108 118 122" stroke="#475569" stroke-width="3" stroke-linecap="round" fill="none" />
+    <ellipse cx="98" cy="112" rx="4" ry="3" fill="#f43f5e" />
+
+    <!-- Animated Thumbs Up Paw (Bobs with emotion!) -->
+    <g class="thumb-anim" transform="translate(130, 125)">
+      <circle cx="22" cy="30" r="14" fill="#f8fafc" stroke="#64748b" stroke-width="2" />
+      <path d="M 22 30 L 22 10 C 22 4, 30 4, 30 10 L 30 28" fill="#f8fafc" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+      <circle cx="16" cy="28" r="2.5" fill="#f472b6" />
+      <circle cx="22" cy="33" r="2.5" fill="#f472b6" />
+      <circle cx="28" cy="28" r="2.5" fill="#f472b6" />
+    </g>
+  </g>
+</svg>

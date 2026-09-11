@@ -1,6 +1,6 @@
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useRef, useState } from "react";
-import { Trash2, Pencil, Smile, Check, CheckCheck, Copy, Lock, Reply, Clock, AlertCircle } from "lucide-react";
+import { Trash2, Pencil, Smile, Check, CheckCheck, Copy, Lock, Reply, Clock, AlertCircle, Star } from "lucide-react";
 import toast from "react-hot-toast";
 
 import ChatHeader from "./ChatHeader";
@@ -149,6 +149,44 @@ const ChatContainer = () => {
       }, 1600);
     } else {
       toast("Original message is further up in chat history");
+    }
+  };
+
+  const handleSaveSticker = (stickerUrl) => {
+    if (!stickerUrl) return;
+    try {
+      const LOCAL_STORAGE_CUSTOM = "wa_custom_stickers";
+      const LOCAL_STORAGE_FAVORITES = "wa_favorite_stickers";
+
+      const customSticker = {
+        id: `saved-${Date.now()}`,
+        name: "Saved Sticker",
+        url: stickerUrl,
+        isCustom: true,
+      };
+
+      const existingCustom = JSON.parse(
+        localStorage.getItem(LOCAL_STORAGE_CUSTOM) || "[]"
+      );
+      const updatedCustom = [
+        customSticker,
+        ...existingCustom.filter((s) => s.url !== stickerUrl),
+      ].slice(0, 50);
+      localStorage.setItem(LOCAL_STORAGE_CUSTOM, JSON.stringify(updatedCustom));
+
+      const existingFavs = JSON.parse(
+        localStorage.getItem(LOCAL_STORAGE_FAVORITES) || "[]"
+      );
+      const updatedFavs = [
+        customSticker,
+        ...existingFavs.filter((s) => s.url !== stickerUrl),
+      ].slice(0, 50);
+      localStorage.setItem(LOCAL_STORAGE_FAVORITES, JSON.stringify(updatedFavs));
+
+      window.dispatchEvent(new Event("wa_stickers_updated"));
+      toast.success("Sticker saved to your collection! ⭐");
+    } catch (err) {
+      console.error("Failed to save sticker", err);
     }
   };
 
@@ -303,6 +341,18 @@ const ChatContainer = () => {
                       </button>
                     )}
 
+                    {/* Save Sticker to My Collection */}
+                    {message.sticker && (
+                      <button
+                        type="button"
+                        className="p-1 hover:bg-base-200 rounded-full text-amber-500 hover:text-amber-600 cursor-pointer"
+                        onClick={() => handleSaveSticker(message.sticker)}
+                        title="Save to My Stickers ⭐"
+                      >
+                        <Star size={13} fill="currentColor" />
+                      </button>
+                    )}
+
                     {/* Sender Edit/Delete */}
                     {isSender && !message._id?.startsWith("temp-") && (
                       <>
@@ -409,6 +459,7 @@ const ChatContainer = () => {
                           <img
                             src={message.replyTo.sticker}
                             alt="Quoted sticker"
+                            referrerPolicy="no-referrer"
                             className="size-8 object-contain flex-shrink-0"
                           />
                         )}
@@ -484,13 +535,26 @@ const ChatContainer = () => {
 
                       {/* Sticker Content (WhatsApp Style) */}
                       {message.sticker && (
-                        <div className="relative group/sticker inline-block select-none my-0.5">
+                        <div
+                          className="relative group/sticker inline-block select-none my-0.5 cursor-pointer"
+                          title="Click to save sticker to your collection ⭐"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSaveSticker(message.sticker);
+                          }}
+                        >
                           <img
                             src={message.sticker}
                             alt="Sticker"
-                            className="w-32 h-32 sm:w-36 sm:h-36 object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-200 pointer-events-none"
+                            referrerPolicy="no-referrer"
+                            className="w-28 h-28 sm:w-36 sm:h-36 max-w-[160px] max-h-[160px] object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-200 pointer-events-none"
                             loading="lazy"
                           />
+
+                          {/* Quick "Save ⭐" hover badge on the sticker */}
+                          <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full p-1 opacity-0 group-hover/sticker:opacity-100 transition-opacity shadow-md text-[10px] flex items-center justify-center pointer-events-none">
+                            <Star size={10} fill="currentColor" />
+                          </div>
 
                           {/* Floating WhatsApp Translucent Time & Status Pill for Stickers */}
                           {isSticker && (

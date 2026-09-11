@@ -38,7 +38,7 @@ const App = () => {
     );
 
   return (
-    <div data-theme={theme} className="h-full min-h-[100dvh] bg-base-100 text-base-content overflow-hidden flex flex-col">
+    <div data-theme={theme} className="min-h-[100dvh] bg-base-100 text-base-content flex flex-col">
       <Navbar />
 
       <Routes>

@@ -5,6 +5,7 @@ import { Image, Send, X, Smile, Paperclip, Reply, Mic, Trash2 } from "lucide-rea
 import toast from "react-hot-toast";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
+import StickerPicker, { WhatsAppStickerIcon } from "./StickerPicker";
 
 function formatRecordTime(secs) {
   const m = Math.floor(secs / 60);
@@ -16,6 +17,7 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
   // Voice note recording states
@@ -27,6 +29,7 @@ const MessageInput = () => {
   const textInputRef = useRef(null);
   const typingTimeout = useRef(null);
   const emojiPickerRef = useRef(null);
+  const stickerPickerRef = useRef(null);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -84,6 +87,7 @@ const MessageInput = () => {
     setText("");
     setImagePreview(null);
     setShowEmojiPicker(false);
+    setShowStickerPicker(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (socket && selectedUser) {
       socket.emit("stopTyping", { to: selectedUser._id, from: authUser._id });
@@ -103,6 +107,26 @@ const MessageInput = () => {
       });
     } catch (error) {
       console.error("Failed to send message:", error);
+    }
+  };
+
+  const handleSendSticker = async (stickerUrl) => {
+    if (!stickerUrl) return;
+    setShowStickerPicker(false);
+    setShowEmojiPicker(false);
+
+    // Keep mobile virtual keyboard and input focused
+    textInputRef.current?.focus();
+    setTimeout(() => {
+      textInputRef.current?.focus();
+    }, 10);
+
+    try {
+      await sendMessage({
+        sticker: stickerUrl,
+      });
+    } catch (error) {
+      console.error("Failed to send sticker:", error);
     }
   };
 
@@ -214,7 +238,7 @@ const MessageInput = () => {
     mediaRecorderRef.current.stop();
   };
 
-  // Close emoji picker when clicking outside
+  // Close emoji and sticker pickers when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -223,6 +247,13 @@ const MessageInput = () => {
         !e.target.closest("#emoji-trigger-btn")
       ) {
         setShowEmojiPicker(false);
+      }
+      if (
+        stickerPickerRef.current &&
+        !stickerPickerRef.current.contains(e.target) &&
+        !e.target.closest("#sticker-trigger-btn")
+      ) {
+        setShowStickerPicker(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -293,18 +324,62 @@ const MessageInput = () => {
       {showEmojiPicker && (
         <div
           ref={emojiPickerRef}
-          className="absolute bottom-full mb-2 left-1 right-1 sm:right-auto sm:left-3 z-50 shadow-2xl rounded-2xl overflow-hidden border border-base-300 max-h-[min(360px,calc(100dvh-180px))] flex flex-col justify-center items-center sm:items-start animate-in fade-in zoom-in-95 duration-150"
+          className="absolute bottom-full mb-1.5 left-2 right-2 sm:right-auto sm:left-3 z-50 shadow-2xl rounded-2xl overflow-hidden border border-base-300 w-auto sm:w-[352px] max-w-[calc(100vw-16px)] h-[min(340px,48dvh)] sm:h-[430px] flex flex-col bg-base-100 dark:bg-[#202c33] animate-in fade-in zoom-in-95 duration-150"
         >
-          <Picker
-            data={data}
-            onEmojiSelect={(emoji) => {
-              setText((prev) => prev + emoji.native);
+          <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col items-center">
+            <Picker
+              data={data}
+              onEmojiSelect={(emoji) => {
+                setText((prev) => prev + emoji.native);
+              }}
+              theme="auto"
+              previewPosition="none"
+              skinTonePosition="search"
+              maxFrequentRows={1}
+              perLine={8}
+            />
+          </div>
+
+          {/* WhatsApp Bottom Switcher: Emoji | Sticker */}
+          <div className="w-full bg-base-200/90 dark:bg-[#111b21] border-t border-base-300 dark:border-base-700 py-1.5 px-3 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center bg-base-100 dark:bg-[#202c33] rounded-full p-0.5 border border-base-300 dark:border-base-600">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-600 text-white shadow-xs transition-colors cursor-default"
+              >
+                <Smile size={14} />
+                <span>Emoji</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEmojiPicker(false);
+                  setShowStickerPicker(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-base-content/70 hover:text-base-content hover:bg-base-200/60 transition-colors cursor-pointer"
+              >
+                <WhatsAppStickerIcon size={14} />
+                <span>Sticker</span>
+              </button>
+            </div>
+            <span className="text-[11px] text-base-content/40 font-medium">Emojis</span>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Sticker Picker Popover */}
+      {showStickerPicker && (
+        <div
+          ref={stickerPickerRef}
+          className="absolute bottom-full mb-1.5 left-2 right-2 sm:right-auto sm:left-3 z-50 animate-in fade-in zoom-in-95 duration-150 flex justify-center sm:justify-start"
+        >
+          <StickerPicker
+            onSelectSticker={handleSendSticker}
+            onClose={() => setShowStickerPicker(false)}
+            onSwitchToEmoji={() => {
+              setShowStickerPicker(false);
+              setShowEmojiPicker(true);
             }}
-            theme="auto"
-            previewPosition="none"
-            skinTonePosition="search"
-            maxFrequentRows={1}
-            perLine={8}
           />
         </div>
       )}
@@ -400,10 +475,29 @@ const MessageInput = () => {
               className={`p-2 sm:p-1.5 transition-colors rounded-full hover:bg-base-300/50 cursor-pointer ${
                 showEmojiPicker ? "text-emerald-500 bg-emerald-500/10" : "text-base-content/50 hover:text-base-content"
               }`}
-              onClick={() => setShowEmojiPicker((prev) => !prev)}
+              onClick={() => {
+                setShowEmojiPicker((prev) => !prev);
+                setShowStickerPicker(false);
+              }}
               title="Emojis"
             >
               <Smile size={21} />
+            </button>
+
+            {/* Sticker Toggle Button */}
+            <button
+              id="sticker-trigger-btn"
+              type="button"
+              className={`p-2 sm:p-1.5 transition-colors rounded-full hover:bg-base-300/50 cursor-pointer ${
+                showStickerPicker ? "text-emerald-500 bg-emerald-500/10" : "text-base-content/50 hover:text-base-content"
+              }`}
+              onClick={() => {
+                setShowStickerPicker((prev) => !prev);
+                setShowEmojiPicker(false);
+              }}
+              title="Stickers"
+            >
+              <WhatsAppStickerIcon size={20} />
             </button>
 
             {/* Text input (text-base on mobile prevents iOS auto-zoom) */}
