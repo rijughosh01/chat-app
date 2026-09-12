@@ -109,11 +109,147 @@ em-emoji-picker {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
-/* Subtle WhatsApp Chat Wallpaper */
-.wa-wallpaper {
-  background-color: rgba(128, 128, 128, 0.04);
-  background-image: radial-gradient(rgba(128, 128, 128, 0.15) 1px, transparent 1px);
-  background-size: 16px 16px;
+/* WhatsApp Authentic Chat Wallpaper Styles */
+.wa-wallpaper,
+.wa-wallpaper-classic {
+  background-color: #efeae2;
+  background-image: url("/whatsapp-doodle.svg");
+  background-size: 380px 380px;
+  background-repeat: repeat;
+  background-attachment: local;
+}
+
+/* Dark mode override for WhatsApp Classic */
+[data-theme="dark"] .wa-wallpaper,
+[data-theme="night"] .wa-wallpaper,
+[data-theme="black"] .wa-wallpaper,
+[data-theme="luxury"] .wa-wallpaper,
+[data-theme="dracula"] .wa-wallpaper,
+[data-theme="synthwave"] .wa-wallpaper,
+[data-theme="halloween"] .wa-wallpaper,
+[data-theme="forest"] .wa-wallpaper,
+[data-theme="aqua"] .wa-wallpaper,
+[data-theme="coffee"] .wa-wallpaper,
+[data-theme="dim"] .wa-wallpaper,
+[data-theme="sunset"] .wa-wallpaper,
+[data-theme="business"] .wa-wallpaper,
+[data-theme="dark"] .wa-wallpaper-classic,
+[data-theme="night"] .wa-wallpaper-classic,
+[data-theme="black"] .wa-wallpaper-classic,
+[data-theme="luxury"] .wa-wallpaper-classic,
+[data-theme="dracula"] .wa-wallpaper-classic,
+[data-theme="synthwave"] .wa-wallpaper-classic,
+[data-theme="halloween"] .wa-wallpaper-classic,
+[data-theme="forest"] .wa-wallpaper-classic,
+[data-theme="aqua"] .wa-wallpaper-classic,
+[data-theme="coffee"] .wa-wallpaper-classic,
+[data-theme="dim"] .wa-wallpaper-classic,
+[data-theme="sunset"] .wa-wallpaper-classic,
+[data-theme="business"] .wa-wallpaper-classic {
+  background-color: #0b141a;
+  background-image: url("/whatsapp-doodle-dark.svg");
+  background-size: 380px 380px;
+  background-repeat: repeat;
+  background-attachment: local;
+}
+
+/* WhatsApp Midnight Dark Wallpaper */
+.wa-wallpaper-midnight {
+  background-color: #0b141a !important;
+  background-image: url("/whatsapp-doodle-dark.svg") !important;
+  background-size: 380px 380px !important;
+  background-repeat: repeat !important;
+  background-attachment: local !important;
+}
+
+/* Theme-Matched Wallpaper (Uses active theme base-200 with doodle) */
+.wa-wallpaper-theme {
+  background-color: var(--color-base-200, rgba(128, 128, 128, 0.08));
+  background-image: url("/whatsapp-doodle.svg");
+  background-size: 380px 380px;
+  background-repeat: repeat;
+  background-attachment: local;
+}
+
+[data-theme="dark"] .wa-wallpaper-theme,
+[data-theme="night"] .wa-wallpaper-theme,
+[data-theme="black"] .wa-wallpaper-theme,
+[data-theme="luxury"] .wa-wallpaper-theme,
+[data-theme="dracula"] .wa-wallpaper-theme,
+[data-theme="synthwave"] .wa-wallpaper-theme,
+[data-theme="halloween"] .wa-wallpaper-theme,
+[data-theme="forest"] .wa-wallpaper-theme,
+[data-theme="aqua"] .wa-wallpaper-theme,
+[data-theme="coffee"] .wa-wallpaper-theme,
+[data-theme="dim"] .wa-wallpaper-theme,
+[data-theme="sunset"] .wa-wallpaper-theme,
+[data-theme="business"] .wa-wallpaper-theme {
+  background-image: url("/whatsapp-doodle-dark.svg");
+}
+
+/* Clean Minimal Wallpaper (No doodles) */
+.wa-wallpaper-minimal {
+  background-image: none !important;
+}
+
+/* Toggle option: Hide doodle */
+.wa-no-doodle {
+  background-image: none !important;
+}
+
+/* WhatsApp Frosted Date Pill */
+.wa-date-pill {
+  background-color: rgba(255, 255, 255, 0.92);
+  color: #54656f;
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(4px);
+}
+
+[data-theme="dark"] .wa-date-pill,
+[data-theme="night"] .wa-date-pill,
+[data-theme="black"] .wa-date-pill,
+[data-theme="luxury"] .wa-date-pill,
+[data-theme="dracula"] .wa-date-pill,
+[data-theme="synthwave"] .wa-date-pill,
+[data-theme="halloween"] .wa-date-pill,
+[data-theme="forest"] .wa-date-pill,
+[data-theme="aqua"] .wa-date-pill,
+[data-theme="coffee"] .wa-date-pill,
+[data-theme="dim"] .wa-date-pill,
+[data-theme="sunset"] .wa-date-pill,
+[data-theme="business"] .wa-date-pill {
+  background-color: rgba(24, 34, 41, 0.95);
+  color: #8696a0;
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.3);
+}
+
+/* WhatsApp E2E Security Notice Pill */
+.wa-security-pill {
+  background-color: rgba(255, 238, 205, 0.92);
+  border: 1px solid rgba(245, 195, 99, 0.35);
+  color: #54656f;
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+}
+
+[data-theme="dark"] .wa-security-pill,
+[data-theme="night"] .wa-security-pill,
+[data-theme="black"] .wa-security-pill,
+[data-theme="luxury"] .wa-security-pill,
+[data-theme="dracula"] .wa-security-pill,
+[data-theme="synthwave"] .wa-security-pill,
+[data-theme="halloween"] .wa-security-pill,
+[data-theme="forest"] .wa-security-pill,
+[data-theme="aqua"] .wa-security-pill,
+[data-theme="coffee"] .wa-security-pill,
+[data-theme="dim"] .wa-security-pill,
+[data-theme="sunset"] .wa-security-pill,
+[data-theme="business"] .wa-security-pill {
+  background-color: rgba(24, 34, 41, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #ffd279;
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.3);
 }
 
 /* Micro-Animation for message popping */

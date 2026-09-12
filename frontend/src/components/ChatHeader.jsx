@@ -1,14 +1,18 @@
-import { X, Phone, Video, Search, ArrowLeft } from "lucide-react";
+import { X, Phone, Video, Search, ArrowLeft, Paintbrush, Check } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
+import { useThemeStore, WALLPAPER_OPTIONS } from "../store/useThemeStore";
 import { formatLastSeen } from "../lib/utils";
 
 const ChatHeader = () => {
   const { selectedUser, setSelectedUser } = useChatStore();
   const { onlineUsers } = useAuthStore();
+  const { wallpaper, setWallpaper, wallpaperDoodle, toggleWallpaperDoodle } =
+    useThemeStore();
 
   const canShowStatus = selectedUser?.showOnlineStatus !== false;
   const isOnline = canShowStatus && onlineUsers.includes(selectedUser?._id);
+
 
   return (
     <div className="px-3 sm:px-4 py-2.5 border-b border-base-300/80 bg-base-100/90 backdrop-blur-md flex items-center justify-between z-10 flex-shrink-0">
@@ -79,6 +83,59 @@ const ChatHeader = () => {
         >
           <Search size={17} />
         </button>
+
+        {/* Wallpaper Customizer Dropdown */}
+        <div className="dropdown dropdown-end">
+          <button
+            tabIndex={0}
+            type="button"
+            className="btn btn-ghost btn-sm btn-circle text-base-content/60 hover:text-base-content hover:text-emerald-500"
+            title="Chat Wallpaper & Style"
+          >
+            <Paintbrush size={17} />
+          </button>
+          <div
+            tabIndex={0}
+            className="dropdown-content z-50 menu p-3 shadow-xl bg-base-100 dark:bg-[#1f2c34] border border-base-300 dark:border-white/10 rounded-2xl w-64 text-xs space-y-2 mt-2"
+          >
+            <div className="flex items-center justify-between pb-1 border-b border-base-200 dark:border-white/5">
+              <span className="font-semibold text-sm text-base-content">
+                Chat Wallpaper
+              </span>
+              <span className="badge badge-xs badge-success text-white font-medium">
+                WhatsApp
+              </span>
+            </div>
+
+            <div className="space-y-1">
+              {WALLPAPER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setWallpaper(opt.id)}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
+                    wallpaper === opt.id
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+                      : "hover:bg-base-200 dark:hover:bg-white/5 text-base-content/80"
+                  }`}
+                >
+                  <span className="truncate">{opt.name}</span>
+                  {wallpaper === opt.id && <Check size={14} className="stroke-[2.5]" />}
+                </button>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-base-200 dark:border-white/5 flex items-center justify-between">
+              <span className="text-base-content/70">Doodle Texture</span>
+              <input
+                type="checkbox"
+                className="toggle toggle-xs toggle-success cursor-pointer"
+                checked={wallpaperDoodle}
+                onChange={(e) => toggleWallpaperDoodle(e.target.checked)}
+              />
+            </div>
+          </div>
+        </div>
 
         <button
           type="button"

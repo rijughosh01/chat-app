@@ -1,6 +1,19 @@
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useRef, useState } from "react";
-import { Trash2, Pencil, Smile, Check, CheckCheck, Copy, Lock, Reply, Clock, AlertCircle, Star } from "lucide-react";
+import {
+  Trash2,
+  Pencil,
+  Smile,
+  Check,
+  CheckCheck,
+  Copy,
+  Lock,
+  Reply,
+  Clock,
+  AlertCircle,
+  Star,
+  ChevronDown,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 import ChatHeader from "./ChatHeader";
@@ -9,6 +22,7 @@ import MessageSkeleton from "./skeletons/MessageSkeleton";
 import ImageModal from "./ImageModal";
 import AudioMessagePlayer from "./AudioMessagePlayer";
 import { useAuthStore } from "../store/useAuthStore";
+import { useThemeStore } from "../store/useThemeStore";
 import { formatMessageTime, formatDateDivider } from "../lib/utils";
 import { addStickerToRecents } from "./StickerPicker";
 
@@ -33,6 +47,7 @@ const ChatContainer = () => {
     loadMoreMessages,
   } = useChatStore();
   const { authUser } = useAuthStore();
+  const { wallpaper, wallpaperDoodle } = useThemeStore();
   const messageEndRef = useRef(null);
   const chatScrollContainerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
@@ -43,6 +58,8 @@ const ChatContainer = () => {
   const [reactionPickerMsgId, setReactionPickerMsgId] = useState(null);
   const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
   const [modalImage, setModalImage] = useState(null);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
 
   useEffect(() => {
     if (!selectedUser?._id) return;
@@ -80,6 +97,11 @@ const ChatContainer = () => {
   const handleScroll = async () => {
     const container = chatScrollContainerRef.current;
     if (!container) return;
+
+    // Detect if user has scrolled up from the bottom (show scroll-to-bottom button)
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    setShowScrollBottom(distanceFromBottom > 180);
 
     if (
       container.scrollTop < 60 &&
@@ -181,47 +203,62 @@ const ChatContainer = () => {
     }
   };
 
+  const wallpaperClass = `
+    ${
+      wallpaper === "whatsapp-midnight"
+        ? "wa-wallpaper-midnight"
+        : wallpaper === "theme-matched"
+        ? "wa-wallpaper-theme"
+        : wallpaper === "minimal"
+        ? "wa-wallpaper-minimal"
+        : "wa-wallpaper-classic"
+    }
+    ${!wallpaperDoodle ? "wa-no-doodle" : ""}
+  `;
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-base-100 min-w-0">
+    <div className="flex-1 flex flex-col overflow-hidden bg-base-100 min-w-0 relative">
       <ChatHeader />
 
       {/* WhatsApp Chat Wall with Custom Wallpaper Texture */}
-      <div
-        ref={chatScrollContainerRef}
-        onScroll={handleScroll}
-        onClick={(e) => {
-          if (e.target === chatScrollContainerRef.current) {
-            setActiveMenuMsgId(null);
-            setReactionPickerMsgId(null);
-          }
-        }}
-        className="flex-1 overflow-y-auto px-2.5 sm:px-4 py-2.5 sm:py-3 space-y-2 wa-wallpaper overscroll-contain"
-      >
-        {/* Top Loading Spinner for Infinite Scroll */}
-        {isLoadingMoreMessages && (
-          <div className="flex justify-center py-2 animate-in fade-in duration-150">
-            <div className="bg-base-100/90 dark:bg-base-300/80 px-3 py-1 rounded-full shadow-xs flex items-center gap-2 text-xs text-base-content/70 border border-base-300">
-              <span className="loading loading-spinner loading-xs text-emerald-500"></span>
-              <span>Loading earlier messages...</span>
+      <div className="relative flex-1 overflow-hidden flex flex-col">
+        <div
+          ref={chatScrollContainerRef}
+          onScroll={handleScroll}
+          onClick={(e) => {
+            if (e.target === chatScrollContainerRef.current) {
+              setActiveMenuMsgId(null);
+              setReactionPickerMsgId(null);
+            }
+          }}
+          className={`flex-1 overflow-y-auto px-2.5 sm:px-4 py-2.5 sm:py-3 space-y-2 overscroll-contain transition-all duration-300 ${wallpaperClass}`}
+        >
+          {/* Top Loading Spinner for Infinite Scroll */}
+          {isLoadingMoreMessages && (
+            <div className="flex justify-center py-2 animate-in fade-in duration-150">
+              <div className="bg-base-100/90 dark:bg-base-300/80 px-3 py-1 rounded-full shadow-xs flex items-center gap-2 text-xs text-base-content/70 border border-base-300">
+                <span className="loading loading-spinner loading-xs text-emerald-500"></span>
+                <span>Loading earlier messages...</span>
+              </div>
+            </div>
+          )}
+
+          {!hasMoreMessages && messages.length >= 30 && (
+            <div className="flex justify-center my-2">
+              <span className="bg-base-200/80 text-base-content/50 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs">
+                Beginning of chat history
+              </span>
+            </div>
+          )}
+
+          {/* End-to-End Encryption Notice Banner */}
+          <div className="flex justify-center my-2.5 select-none">
+            <div className="wa-security-pill text-[11px] sm:text-[11.5px] px-3.5 sm:px-4 py-1.5 rounded-lg flex items-center gap-2 max-w-md text-center shadow-xs">
+              <Lock size={12} className="flex-shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>Messages are end-to-end encrypted. No one outside of this chat can read them.</span>
             </div>
           </div>
-        )}
 
-        {!hasMoreMessages && messages.length >= 30 && (
-          <div className="flex justify-center my-2">
-            <span className="bg-base-200/80 text-base-content/50 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs">
-              Beginning of chat history
-            </span>
-          </div>
-        )}
-
-        {/* End-to-End Encryption Notice Banner */}
-        <div className="flex justify-center my-2">
-          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 max-w-md text-center shadow-xs">
-            <Lock size={13} className="flex-shrink-0" />
-            <span>Messages are secured and private. Chat securely with your contacts.</span>
-          </div>
-        </div>
 
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-48 text-base-content/40 text-xs text-center space-y-2">
@@ -247,8 +284,8 @@ const ChatContainer = () => {
             <div key={message._id} className="space-y-1.5 animate-message-in">
               {/* WhatsApp Date Divider Pill */}
               {showDateDivider && (
-                <div className="flex justify-center my-3">
-                  <span className="bg-base-300/80 backdrop-blur-xs text-base-content/75 px-3 py-0.5 rounded-lg text-[11px] font-semibold tracking-wide uppercase shadow-xs">
+                <div className="flex justify-center my-3 sticky top-1 z-10 select-none">
+                  <span className="wa-date-pill px-3.5 py-1 rounded-lg text-[11px] font-semibold tracking-wide uppercase shadow-xs select-none">
                     {currentDate}
                   </span>
                 </div>
@@ -669,7 +706,23 @@ const ChatContainer = () => {
         )}
       </div>
 
-      <MessageInput />
+      {/* WhatsApp Scroll to Bottom Floating Action Button */}
+      {showScrollBottom && (
+        <button
+          type="button"
+          onClick={() => {
+            messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            setShowScrollBottom(false);
+          }}
+          className="absolute right-4 bottom-20 z-30 size-10 rounded-full bg-base-100/95 dark:bg-[#202c33]/95 text-base-content/80 dark:text-[#8696a0] hover:text-emerald-500 dark:hover:text-emerald-400 shadow-lg border border-base-content/10 dark:border-white/10 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer animate-in fade-in zoom-in-75"
+          title="Scroll to bottom"
+        >
+          <ChevronDown size={20} className="stroke-[2.5]" />
+        </button>
+      )}
+    </div>
+
+    <MessageInput />
 
       {/* Full Screen Image Lightbox Modal */}
       {modalImage && (

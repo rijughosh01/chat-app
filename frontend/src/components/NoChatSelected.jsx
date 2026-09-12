@@ -1,8 +1,27 @@
 import { MessagesSquare, Lock } from "lucide-react";
+import { useThemeStore } from "../store/useThemeStore";
 
 const NoChatSelected = () => {
+  const { wallpaper, wallpaperDoodle } = useThemeStore();
+
+  const wallpaperClass = `
+    ${
+      wallpaper === "whatsapp-midnight"
+        ? "wa-wallpaper-midnight"
+        : wallpaper === "theme-matched"
+        ? "wa-wallpaper-theme"
+        : wallpaper === "minimal"
+        ? "wa-wallpaper-minimal"
+        : "wa-wallpaper-classic"
+    }
+    ${!wallpaperDoodle ? "wa-no-doodle" : ""}
+  `;
+
   return (
-    <div className="w-full flex flex-1 flex-col items-center justify-between p-8 sm:p-16 bg-base-100/60 border-l border-base-300 select-none wa-wallpaper">
+    <div
+      className={`w-full flex flex-1 flex-col items-center justify-between p-8 sm:p-16 border-l border-base-300 select-none transition-all duration-300 ${wallpaperClass}`}
+    >
+
       <div />
 
       <div className="max-w-md text-center space-y-4">

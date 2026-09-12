@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
-import { CircleUser, LogOut, MessagesSquare, Settings } from "lucide-react";
+import { usePwaStore } from "../store/usePwaStore";
+import { CircleUser, LogOut, MessagesSquare, Settings, Download } from "lucide-react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
   const { selectedUser } = useChatStore();
+  const { isStandalone, canInstall, installApp } = usePwaStore();
   const location = useLocation();
 
   const isChatOpenOnMobile = location.pathname === "/" && Boolean(selectedUser);
@@ -31,6 +33,18 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={installApp}
+                className="btn btn-sm btn-ghost gap-1.5 text-xs text-primary hover:bg-primary/10 font-medium"
+                title="Install NexChat Desktop / Mobile App"
+              >
+                <Download className="size-4" />
+                <span className="hidden sm:inline">Install App</span>
+              </button>
+            )}
+
             {authUser ? (
               <Link
                 to="/"

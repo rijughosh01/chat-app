@@ -3,6 +3,8 @@ import Message from "../models/message.model.js";
 
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
+import { sendPushNotification } from "../lib/webpush.js";
+
 
 export const getUsersForSidebar = async (req, res) => {
   try {
@@ -191,6 +193,34 @@ export const sendMessage = async (req, res) => {
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
+
+    // Trigger Web Push notification asynchronously (for backgrounded tabs, locked screen, or offline users)
+    let previewText = "Sent a message";
+    if (text) {
+      previewText = text.length > 120 ? text.substring(0, 117) + "..." : text;
+    } else if (imageUrl) {
+      previewText = "📷 Sent an image";
+    } else if (audioUrl) {
+      previewText = "🎙️ Sent a voice message";
+    } else if (stickerUrl) {
+      previewText = "🏷️ Sent a sticker";
+    }
+
+    sendPushNotification(receiverId, {
+      title: req.user.fullName || "NexChat",
+      body: previewText,
+      icon: req.user.profilePic || "/avatar.png",
+      badge: "/vite.svg",
+      tag: `chat-${senderId}`,
+      data: {
+        url: `/?chatWith=${senderId}`,
+        senderId: senderId.toString(),
+        senderName: req.user.fullName,
+        messageId: newMessage._id.toString(),
+      },
+    }).catch((pushErr) => {
+      console.error("Error dispatching push notification:", pushErr.message);
+    });
 
     res.status(201).json(newMessage);
   } catch (error) {
