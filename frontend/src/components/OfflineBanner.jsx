@@ -22,7 +22,7 @@ const OfflineBanner = () => {
   }
 
   const isChatOpenOnMobile = location.pathname === "/" && Boolean(selectedUser);
-  const topPosition = isChatOpenOnMobile ? "top-0" : "top-16";
+  const topPosition = isChatOpenOnMobile ? "top-0" : "top-14 sm:top-16";
 
   return (
     <aside

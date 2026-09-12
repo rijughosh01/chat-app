@@ -280,12 +280,14 @@ const MessageInput = () => {
   }, [replyingMessage]);
 
   return (
-    <div className="p-2.5 sm:p-3 bg-base-100/90 backdrop-blur-md border-t border-base-300/80 relative flex-shrink-0 z-20">
+    <div className="p-2 sm:p-3 bg-base-100/90 backdrop-blur-xl border-t border-base-content/10 relative flex-shrink-0 z-20 safe-pb">
       {/* WhatsApp-Style Reply Quoting Banner */}
       {replyingMessage && (
-        <div className="mb-2 flex items-center justify-between p-2 sm:px-3 bg-base-200/90 rounded-xl border-l-4 border-emerald-500 border border-base-300 shadow-sm animate-message-in">
+        <div className="mb-2 flex items-center justify-between p-2.5 sm:px-3.5 bg-base-200/90 backdrop-blur-md rounded-2xl border-l-4 border-emerald-500 border border-base-content/10 shadow-sm animate-message-in">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <Reply className="size-4 text-emerald-500 flex-shrink-0" />
+            <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+              <Reply className="size-3.5" />
+            </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 truncate">
                 Replying to{" "}
@@ -309,7 +311,7 @@ const MessageInput = () => {
               <img
                 src={replyingMessage.image}
                 alt="Reply preview"
-                className="size-9 object-cover rounded-md border border-base-300"
+                className="size-9 object-cover rounded-xl border border-base-content/10"
               />
             )}
             <button
@@ -471,13 +473,13 @@ const MessageInput = () => {
         </div>
       ) : (
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-          <div className="flex-1 flex items-center bg-base-200/90 border border-base-300/80 rounded-full px-3 py-1 shadow-inner focus-within:border-emerald-500/60 focus-within:bg-base-100 transition-all">
+          <div className="flex-1 flex items-center bg-base-200/70 hover:bg-base-200/90 focus-within:bg-base-100 border border-base-content/10 focus-within:border-emerald-500/50 focus-within:ring-2 focus-within:ring-emerald-500/20 rounded-full px-2.5 sm:px-3 py-1 shadow-inner transition-all">
             {/* Emoji Toggle Button */}
             <button
               id="emoji-trigger-btn"
               type="button"
-              className={`p-2 sm:p-1.5 transition-colors rounded-full hover:bg-base-300/50 cursor-pointer ${
-                showEmojiPicker ? "text-emerald-500 bg-emerald-500/10" : "text-base-content/50 hover:text-base-content"
+              className={`p-1.5 sm:p-1.5 transition-all rounded-full hover:bg-base-300/60 cursor-pointer active:scale-90 ${
+                showEmojiPicker ? "text-emerald-500 bg-emerald-500/15 shadow-xs" : "text-base-content/50 hover:text-base-content"
               }`}
               onClick={() => {
                 setShowEmojiPicker((prev) => !prev);
@@ -485,15 +487,15 @@ const MessageInput = () => {
               }}
               title="Emojis"
             >
-              <Smile size={21} />
+              <Smile size={20} />
             </button>
 
             {/* Sticker Toggle Button */}
             <button
               id="sticker-trigger-btn"
               type="button"
-              className={`p-2 sm:p-1.5 transition-colors rounded-full hover:bg-base-300/50 cursor-pointer ${
-                showStickerPicker ? "text-emerald-500 bg-emerald-500/10" : "text-base-content/50 hover:text-base-content"
+              className={`p-1.5 sm:p-1.5 transition-all rounded-full hover:bg-base-300/60 cursor-pointer active:scale-90 ${
+                showStickerPicker ? "text-emerald-500 bg-emerald-500/15 shadow-xs" : "text-base-content/50 hover:text-base-content"
               }`}
               onClick={() => {
                 setShowStickerPicker((prev) => !prev);
@@ -501,14 +503,14 @@ const MessageInput = () => {
               }}
               title="Stickers"
             >
-              <WhatsAppStickerIcon size={20} />
+              <WhatsAppStickerIcon size={19} />
             </button>
 
             {/* Text input (text-base on mobile prevents iOS auto-zoom) */}
             <input
               ref={textInputRef}
               type="text"
-              className="w-full bg-transparent border-none outline-none px-2 py-1.5 text-base sm:text-sm text-base-content placeholder:text-base-content/40 focus:ring-0"
+              className="w-full bg-transparent border-none outline-none px-2 py-1.5 text-base sm:text-sm text-base-content placeholder:text-base-content/40 focus:ring-0 font-normal"
               placeholder="Type a message..."
               value={text}
               onChange={handleTyping}
@@ -527,15 +529,15 @@ const MessageInput = () => {
             {/* Attachment Paperclip Button */}
             <button
               type="button"
-              className={`p-2 sm:p-1.5 rounded-full transition-colors cursor-pointer ${
+              className={`p-1.5 sm:p-1.5 rounded-full transition-all cursor-pointer active:scale-90 ${
                 imagePreview
-                  ? "text-emerald-500 bg-emerald-500/10"
-                  : "text-base-content/50 hover:text-base-content hover:bg-base-300/50"
+                  ? "text-emerald-500 bg-emerald-500/15 shadow-xs"
+                  : "text-base-content/50 hover:text-base-content hover:bg-base-300/60"
               }`}
               onClick={() => fileInputRef.current?.click()}
               title="Attach image"
             >
-              <Paperclip size={20} />
+              <Paperclip size={19} />
             </button>
           </div>
 
@@ -561,13 +563,13 @@ const MessageInput = () => {
                 startRecording();
               }
             }}
-            className="size-10 sm:size-11 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white flex items-center justify-center shadow-md transition-all flex-shrink-0 cursor-pointer"
+            className="size-10 sm:size-11 rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 active:scale-95 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 transition-all flex-shrink-0 cursor-pointer"
             title={text.trim() || imagePreview ? "Send message" : "Record voice note"}
           >
             {text.trim() || imagePreview ? (
               <Send size={18} className="translate-x-0.5 animate-in zoom-in-75 duration-100" />
             ) : (
-              <Mic size={20} className="animate-in zoom-in-75 duration-100" />
+              <Mic size={19} className="animate-in zoom-in-75 duration-100" />
             )}
           </button>
         </form>

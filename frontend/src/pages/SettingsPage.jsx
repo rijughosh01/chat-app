@@ -60,52 +60,61 @@ const SettingsPage = () => {
 
 
   return (
-    <div className="min-h-[100dvh] w-full container mx-auto px-4 pt-20 pb-24 max-w-5xl">
+    <div className="min-h-[100dvh] w-full container mx-auto px-3 sm:px-6 pt-20 sm:pt-24 pb-24 max-w-5xl">
       <div className="space-y-6">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold">Theme</h2>
-          <p className="text-sm text-base-content/70">
-            Choose a theme for your chat interface
-          </p>
-        </div>
+        {/* Themes Palette Card */}
+        <div className="bg-base-100/90 backdrop-blur-xl rounded-3xl border border-base-content/10 p-5 sm:p-6 shadow-md space-y-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-bold tracking-tight text-base-content">
+              Themes
+            </h2>
+            <p className="text-xs sm:text-sm text-base-content/60">
+              Personalize your chat interface with over 30 vibrant color themes
+            </p>
+          </div>
 
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-          {THEMES.map((t) => (
-            <button
-              key={t}
-              className={`
-                group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all
-                ${theme === t ? "bg-base-200 ring-2 ring-primary shadow-sm" : "hover:bg-base-200/50"}
-              `}
-              onClick={() => setTheme(t)}
-            >
-              <div
-                className="relative h-8 w-full rounded-md overflow-hidden shadow-xs border border-base-content/10"
-                data-theme={t}
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 pt-1">
+            {THEMES.map((t) => (
+              <button
+                key={t}
+                className={`
+                  group flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all active:scale-95 cursor-pointer
+                  ${
+                    theme === t
+                      ? "bg-base-200 ring-2 ring-emerald-500 shadow-sm"
+                      : "hover:bg-base-200/50"
+                  }
+                `}
+                onClick={() => setTheme(t)}
               >
-                <div className="absolute inset-0 grid grid-cols-4 gap-px p-1 bg-base-100">
-                  <div className="rounded bg-primary"></div>
-                  <div className="rounded bg-secondary"></div>
-                  <div className="rounded bg-accent"></div>
-                  <div className="rounded bg-neutral"></div>
+                <div
+                  className="relative h-8 w-full rounded-xl overflow-hidden shadow-xs border border-base-content/10"
+                  data-theme={t}
+                >
+                  <div className="absolute inset-0 grid grid-cols-4 gap-px p-1 bg-base-100">
+                    <div className="rounded bg-primary"></div>
+                    <div className="rounded bg-secondary"></div>
+                    <div className="rounded bg-accent"></div>
+                    <div className="rounded bg-neutral"></div>
+                  </div>
                 </div>
-              </div>
-              <span className="text-[11px] font-medium truncate w-full text-center">
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </span>
-            </button>
-          ))}
+                <span className="text-[11px] font-semibold truncate w-full text-center text-base-content/80">
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Chat Wallpaper & WhatsApp Doodle Settings */}
-        <div className="bg-base-100 rounded-2xl border border-base-300 p-5 shadow-sm space-y-4">
+        <div className="bg-base-100/90 backdrop-blur-xl rounded-3xl border border-base-content/10 p-5 sm:p-6 shadow-md space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <Paintbrush className="size-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-base text-base-content">
+                <h3 className="font-bold text-base text-base-content">
                   Chat Wallpaper & Background
                 </h3>
                 <p className="text-xs text-base-content/60">
@@ -115,7 +124,7 @@ const SettingsPage = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-base-content/80">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-base-content/80">
                 <span>WhatsApp Doodles</span>
                 <input
                   type="checkbox"
@@ -136,17 +145,17 @@ const SettingsPage = () => {
                 type="button"
                 onClick={() => setWallpaper(opt.id)}
                 className={`
-                  p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between h-24 cursor-pointer
+                  p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between h-24 cursor-pointer active:scale-95
                   ${
                     wallpaper === opt.id
-                      ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5 shadow-xs"
-                      : "border-base-300 hover:border-base-content/20 hover:bg-base-200/50"
+                      ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/10 shadow-xs"
+                      : "border-base-content/10 hover:border-emerald-500/30 hover:bg-base-200/50"
                   }
                 `}
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-base-content">
+                    <span className="text-xs font-bold text-base-content">
                       {opt.name}
                     </span>
                     {wallpaper === opt.id && (
@@ -178,13 +187,13 @@ const SettingsPage = () => {
 
         {/* Privacy & Online Status Settings */}
         {authUser && (
-          <div className="bg-base-100 rounded-2xl border border-base-300 p-5 shadow-sm space-y-4">
+          <div className="bg-base-100/90 backdrop-blur-xl rounded-3xl border border-base-content/10 p-5 sm:p-6 shadow-md space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <ShieldCheck className="size-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-base text-base-content">
+                <h3 className="font-bold text-base text-base-content">
                   Privacy & Status
                 </h3>
                 <p className="text-xs text-base-content/60">
@@ -199,11 +208,11 @@ const SettingsPage = () => {
               <div className="space-y-1 max-w-md">
                 <label
                   htmlFor="online-status-toggle"
-                  className="text-sm font-medium text-base-content cursor-pointer flex items-center gap-2"
+                  className="text-sm font-semibold text-base-content cursor-pointer flex items-center gap-2"
                 >
                   <span>Show Online & Last Seen Status</span>
                   <span
-                    className={`badge badge-xs font-semibold ${
+                    className={`badge badge-xs font-bold ${
                       authUser.showOnlineStatus !== false
                         ? "badge-success text-white"
                         : "badge-ghost"
@@ -232,7 +241,7 @@ const SettingsPage = () => {
 
         {/* Push Notifications Settings */}
         {authUser && (
-          <div className="bg-base-100 rounded-2xl border border-base-300 p-5 shadow-sm space-y-4">
+          <div className="bg-base-100/90 backdrop-blur-xl rounded-3xl border border-base-content/10 p-5 sm:p-6 shadow-md space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
@@ -357,14 +366,14 @@ const SettingsPage = () => {
         )}
 
         {/* Progressive Web App (PWA) & Offline Access */}
-        <div className="bg-base-100 rounded-2xl border border-base-300 p-5 shadow-sm space-y-4">
+        <div className="bg-base-100/90 backdrop-blur-xl rounded-3xl border border-base-content/10 p-5 sm:p-6 shadow-md space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
+              <div className="p-2.5 rounded-2xl bg-secondary/10 text-secondary">
                 <AppWindow className="size-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-base text-base-content">
+                <h3 className="font-bold text-base text-base-content">
                   Progressive Web App (PWA)
                 </h3>
                 <p className="text-xs text-base-content/60">
@@ -415,7 +424,7 @@ const SettingsPage = () => {
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
               {isStandalone ? (
-                <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
                   <CheckCircle2 className="size-4 shrink-0" />
                   <span>NexChat is currently active in standalone app mode</span>
                 </div>
@@ -423,7 +432,7 @@ const SettingsPage = () => {
                 <button
                   type="button"
                   onClick={installApp}
-                  className="btn btn-secondary btn-sm rounded-xl gap-2 font-medium shadow-xs"
+                  className="btn btn-secondary btn-sm rounded-full gap-2 font-semibold shadow-xs active:scale-95 transition-all"
                 >
                   <Download className="size-4" />
                   <span>Install NexChat App</span>
@@ -433,11 +442,13 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        <h3 className="text-lg font-semibold mb-3">Preview</h3>
-        <div className="rounded-xl border border-base-300 overflow-hidden bg-base-100 shadow-lg">
-          <div className="p-4 bg-base-200">
-            <div className="max-w-lg mx-auto">
-              <div className="bg-base-100 rounded-xl shadow-sm overflow-hidden">
+        {/* Live Theme Preview */}
+        <div className="space-y-3">
+          <h3 className="text-lg font-bold tracking-tight text-base-content">Theme Preview</h3>
+          <div className="rounded-3xl border border-base-content/10 overflow-hidden bg-base-100/90 backdrop-blur-xl shadow-xl">
+            <div className="p-4 bg-base-200/50">
+              <div className="max-w-lg mx-auto">
+                <div className="bg-base-100 rounded-2xl shadow-sm overflow-hidden border border-base-content/10">
                 <div className="px-4 py-3 border-b border-base-300 bg-base-100">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-content font-medium">
