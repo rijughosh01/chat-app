@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
@@ -30,12 +30,21 @@ const Sidebar = () => {
     useChatStore();
 
   const { onlineUsers, authUser } = useAuthStore();
+  const [searchParams] = useSearchParams();
   const [filterTab, setFilterTab] = useState("all"); // 'all' | 'unread' | 'online'
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     getUsers();
   }, [getUsers]);
+
+  // Sync filter tab when navigated from mobile bottom navigation or link with ?filter=...
+  useEffect(() => {
+    const filter = searchParams.get("filter");
+    if (filter === "online" || filter === "unread" || filter === "all") {
+      setFilterTab(filter);
+    }
+  }, [searchParams]);
 
   const totalUnread = users.reduce((acc, u) => acc + (u.unreadCount || 0), 0);
 
@@ -64,10 +73,10 @@ const Sidebar = () => {
   if (isUsersLoading) return <SidebarSkeleton />;
 
   return (
-    <aside className="h-full w-full border-r border-base-content/10 flex flex-col bg-base-100/70 select-none overflow-hidden">
-      {/* Sidebar Top Header */}
-      <div className="p-3.5 sm:p-4 border-b border-base-content/10 space-y-3 flex-shrink-0 bg-base-100/90 backdrop-blur-md">
-        <div className="flex items-center justify-between">
+    <aside className="h-full w-full border-r border-base-content/10 flex flex-col bg-base-100/70 select-none overflow-hidden no-scrollbar">
+      {/* Sidebar Top Header (Desktop profile summary; on mobile Navbar handles top bar) */}
+      <div className="p-2.5 sm:p-4 border-b border-base-content/10 space-y-2.5 sm:space-y-3 flex-shrink-0 bg-base-100/90 backdrop-blur-md">
+        <div className="hidden md:flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Link
               to="/profile"
@@ -232,7 +241,7 @@ const Sidebar = () => {
       )}
 
       {/* Users & Conversations List */}
-      <div className="overflow-y-auto w-full py-1.5 px-2 space-y-1 flex-1 no-scrollbar">
+      <div className="overflow-y-auto w-full py-1.5 px-2 space-y-1 flex-1 no-scrollbar pb-20 md:pb-4">
         {filteredUsers.map((user) => {
           const isSelected = selectedUser?._id === user._id;
           const isOnline =
@@ -244,11 +253,11 @@ const Sidebar = () => {
               key={user._id}
               onClick={() => setSelectedUser(user)}
               className={`
-                w-full p-2.5 sm:p-3 rounded-2xl flex items-center gap-3 transition-all duration-200 text-left cursor-pointer group
+                w-full p-2.5 sm:p-3 rounded-2xl flex items-center gap-3 transition-all duration-150 text-left cursor-pointer group
                 ${
                   isSelected
                     ? "bg-emerald-500/15 dark:bg-emerald-500/20 text-base-content shadow-xs ring-1 ring-emerald-500/30 font-medium"
-                    : "hover:bg-base-200/60 active:scale-[0.99]"
+                    : "hover:bg-base-200/60 active:scale-[0.98] active:bg-base-200/90"
                 }
               `}
             >
@@ -331,12 +340,16 @@ const Sidebar = () => {
                         <span className="truncate">{user.lastMessage.text}</span>
                       )
                     ) : (
-                      <span className="italic text-base-content/40 truncate">
-                        {isOnline
-                          ? "Online now"
-                          : user.showOnlineStatus !== false && user.lastSeen
-                          ? formatLastSeen(user.lastSeen)
-                          : "Tap to message"}
+                      <span className="text-base-content/50 font-normal truncate">
+                        {isOnline ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                            Online now
+                          </span>
+                        ) : user.showOnlineStatus !== false && user.lastSeen ? (
+                          formatLastSeen(user.lastSeen)
+                        ) : (
+                          "Tap to message"
+                        )}
                       </span>
                     )}
                   </p>

@@ -330,7 +330,7 @@ const MessageInput = () => {
       {showEmojiPicker && (
         <div
           ref={emojiPickerRef}
-          className="absolute bottom-full mb-1.5 left-2 right-2 sm:right-auto sm:left-3 z-50 shadow-2xl rounded-2xl overflow-hidden border border-base-300 w-auto sm:w-[352px] max-w-[calc(100vw-16px)] h-[min(340px,48dvh)] sm:h-[430px] flex flex-col bg-base-100 dark:bg-[#202c33] animate-in fade-in zoom-in-95 duration-150"
+          className="absolute bottom-full mb-1.5 left-2 right-2 sm:right-auto sm:left-3 z-50 shadow-2xl rounded-2xl overflow-hidden border border-base-300 w-auto sm:w-[352px] max-w-[calc(100vw-16px)] h-[min(340px,48dvh)] sm:h-[430px] flex flex-col bg-base-100 animate-in fade-in zoom-in-95 duration-150"
         >
           <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col items-center">
             <Picker
@@ -347,8 +347,8 @@ const MessageInput = () => {
           </div>
 
           {/* WhatsApp Bottom Switcher: Emoji | Sticker */}
-          <div className="w-full bg-base-200/90 dark:bg-[#111b21] border-t border-base-300 dark:border-base-700 py-1.5 px-3 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center bg-base-100 dark:bg-[#202c33] rounded-full p-0.5 border border-base-300 dark:border-base-600">
+          <div className="w-full bg-base-200/90 border-t border-base-300 py-1.5 px-3 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center bg-base-100 rounded-full p-0.5 border border-base-300">
               <button
                 type="button"
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-600 text-white shadow-xs transition-colors cursor-default"

@@ -324,3 +324,84 @@ em-emoji-picker {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
+
+/* Mobile Overscroll & Touch Optimizations */
+.chat-scroll-touch {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile Bottom Sheet Slide Animations */
+@keyframes slideUpSheet {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDownSheet {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-sheet-up {
+  animation: slideUpSheet 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-sheet-down {
+  animation: slideDownSheet 0.2s ease-in forwards;
+}
+
+/* Mobile Bottom Navigation Bar Elevation */
+.mobile-nav-shadow {
+  box-shadow: 0 -4px 20px -2px rgba(0, 0, 0, 0.08), 0 -1px 3px 0 rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .mobile-nav-shadow,
+[data-theme="night"] .mobile-nav-shadow,
+[data-theme="black"] .mobile-nav-shadow,
+[data-theme="luxury"] .mobile-nav-shadow,
+[data-theme="dim"] .mobile-nav-shadow {
+  box-shadow: 0 -4px 25px -2px rgba(0, 0, 0, 0.4), 0 -1px 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Instagram / TikTok Double-Tap Heart Burst Animation */
+@keyframes heartPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+  32% {
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  45% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -55%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -90%) scale(0.8);
+  }
+}
+
+.animate-heart-pop {
+  animation: heartPop 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  pointer-events: none;
+}

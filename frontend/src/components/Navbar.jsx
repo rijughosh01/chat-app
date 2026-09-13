@@ -12,12 +12,15 @@ import {
 } from "lucide-react";
 
 const Navbar = () => {
-  const { logout, authUser } = useAuthStore();
-  const { selectedUser } = useChatStore();
+  const { logout, authUser, onlineUsers } = useAuthStore();
+  const { selectedUser, users } = useChatStore();
   const { isStandalone, installApp } = usePwaStore();
   const location = useLocation();
 
   const isChatOpenOnMobile = location.pathname === "/" && Boolean(selectedUser);
+  const onlineCount = (users || []).filter(
+    (u) => u.showOnlineStatus !== false && (onlineUsers || []).includes(u._id)
+  ).length;
 
   return (
     <header
@@ -52,94 +55,142 @@ const Navbar = () => {
 
         {/* Right Navigation Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
-          {!isStandalone && (
-            <button
-              type="button"
-              onClick={installApp}
-              className="btn btn-xs sm:btn-sm btn-ghost gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-full font-medium active:scale-95 transition-all"
-              title="Install NexChat PWA App"
-            >
-              <Download className="size-3.5 sm:size-4" />
-              <span className="hidden sm:inline">Install App</span>
-            </button>
-          )}
-
-          {authUser ? (
-            <Link
-              to="/"
-              className="btn btn-xs sm:btn-sm btn-ghost gap-1.5 text-xs text-base-content/80 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-full font-medium transition-all"
-              title="Chats"
-            >
-              <MessagesSquare className="size-3.5 sm:size-4" />
-              <span className="hidden sm:inline">Chats</span>
-            </Link>
-          ) : (
-            <Link
-              to="/landing"
-              className="btn btn-xs sm:btn-sm btn-ghost gap-1.5 text-xs text-base-content/80 hover:text-base-content rounded-full font-medium"
-              title="Overview"
-            >
-              <span>Overview</span>
-            </Link>
-          )}
-
-          <Link
-            to="/settings"
-            className="btn btn-xs sm:btn-sm btn-ghost gap-1.5 text-xs text-base-content/80 hover:text-base-content hover:bg-base-200/70 rounded-full font-medium transition-all"
-            title="Themes & Wallpapers"
-          >
-            <Palette className="size-3.5 sm:size-4 text-emerald-500" />
-            <span className="hidden sm:inline">Themes</span>
-          </Link>
-
-          {authUser ? (
-            <div className="flex items-center gap-1 sm:gap-2 bg-base-200/70 hover:bg-base-200 border border-base-content/10 rounded-full pl-1 pr-1.5 sm:pr-2 py-0.5 transition-all shadow-xs">
-              <Link
-                to="/profile"
-                className="flex items-center gap-2 active:scale-95 transition-transform"
-                title="View & Edit Profile"
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center gap-2">
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={installApp}
+                className="btn btn-sm btn-ghost gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-full font-medium active:scale-95 transition-all"
+                title="Install NexChat PWA App"
               >
-                <div className="relative">
-                  <img
-                    src={authUser.profilePic || "/avatar.png"}
-                    alt={authUser.fullName}
-                    className="size-7 sm:size-8 rounded-full object-cover ring-2 ring-emerald-500/40 shadow-xs"
-                  />
-                  <span className="absolute bottom-0 right-0 size-2 sm:size-2.5 bg-emerald-500 rounded-full ring-2 ring-base-100" />
+                <Download className="size-4" />
+                <span>Install App</span>
+              </button>
+            )}
+
+            {authUser ? (
+              <>
+                <Link
+                  to="/"
+                  className="btn btn-sm btn-ghost gap-1.5 text-xs text-base-content/80 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-full font-medium transition-all"
+                  title="Chats"
+                >
+                  <MessagesSquare className="size-4" />
+                  <span>Chats</span>
+                </Link>
+
+                <Link
+                  to="/settings"
+                  className="btn btn-sm btn-ghost gap-1.5 text-xs text-base-content/80 hover:text-base-content hover:bg-base-200/70 rounded-full font-medium transition-all"
+                  title="Themes & Wallpapers"
+                >
+                  <Palette className="size-4 text-emerald-500" />
+                  <span>Themes</span>
+                </Link>
+
+                <div className="flex items-center gap-2 bg-base-200/70 hover:bg-base-200 border border-base-content/10 rounded-full pl-1 pr-2 py-0.5 transition-all shadow-xs">
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 active:scale-95 transition-transform"
+                    title="View & Edit Profile"
+                  >
+                    <div className="relative">
+                      <img
+                        src={authUser.profilePic || "/avatar.png"}
+                        alt={authUser.fullName}
+                        className="size-8 rounded-full object-cover ring-2 ring-emerald-500/40 shadow-xs"
+                      />
+                      <span className="absolute bottom-0 right-0 size-2.5 bg-emerald-500 rounded-full ring-2 ring-base-100" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-semibold max-w-[100px] truncate text-base-content">
+                      {authUser.fullName}
+                    </span>
+                  </Link>
+
+                  <div className="h-4 w-px bg-base-content/15 mx-0.5" />
+
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="btn btn-xs btn-circle btn-ghost text-base-content/60 hover:text-error hover:bg-error/10 transition-colors"
+                    title="Sign Out"
+                  >
+                    <LogOut className="size-3.5" />
+                  </button>
                 </div>
-                <span className="text-xs sm:text-sm font-semibold max-w-[90px] truncate hidden sm:inline text-base-content">
-                  {authUser.fullName}
-                </span>
-              </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/landing"
+                  className="btn btn-sm btn-ghost text-xs text-base-content/80 hover:text-base-content rounded-full font-medium"
+                >
+                  Overview
+                </Link>
+                <Link
+                  to="/login"
+                  className="btn btn-sm btn-ghost text-xs text-base-content/80 hover:text-base-content rounded-full"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="btn btn-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-none rounded-full text-xs shadow-md shadow-emerald-600/20 px-3.5 gap-1.5 transition-all active:scale-95"
+                >
+                  <span>Get Started</span>
+                  <ArrowRight className="size-3" />
+                </Link>
+              </div>
+            )}
+          </div>
 
-              <div className="h-4 w-px bg-base-content/15 mx-0.5 hidden sm:block" />
+          {/* Mobile Right Controls (Compact & Touch-Friendly) */}
+          <div className="flex md:hidden items-center gap-1.5">
+            {authUser && onlineCount > 0 && (
+              <span className="flex items-center gap-1 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{onlineCount} online</span>
+              </span>
+            )}
 
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={installApp}
+                className="btn btn-xs btn-ghost text-emerald-600 dark:text-emerald-400 p-1.5 rounded-full"
+                title="Install App"
+              >
+                <Download className="size-4" />
+              </button>
+            )}
+
+            {authUser ? (
               <button
                 type="button"
                 onClick={logout}
                 className="btn btn-xs btn-circle btn-ghost text-base-content/60 hover:text-error hover:bg-error/10 transition-colors"
                 title="Sign Out"
               >
-                <LogOut className="size-3.5" />
+                <LogOut className="size-4" />
               </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                to="/login"
-                className="btn btn-xs sm:btn-sm btn-ghost text-xs text-base-content/80 hover:text-base-content rounded-full"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/signup"
-                className="btn btn-xs sm:btn-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-none rounded-full text-xs shadow-md shadow-emerald-600/20 px-3.5 gap-1.5 transition-all active:scale-95"
-              >
-                <span>Get Started</span>
-                <ArrowRight className="size-3" />
-              </Link>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Link
+                  to="/login"
+                  className="btn btn-xs btn-ghost text-xs text-base-content/80 px-2.5 rounded-full"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="btn btn-xs bg-emerald-600 text-white border-none rounded-full text-xs px-3 shadow-xs active:scale-95"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

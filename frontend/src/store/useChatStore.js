@@ -3,6 +3,11 @@ import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "./useAuthStore";
 import { playNotificationSound } from "../lib/sounds";
+import {
+  savePendingMessage,
+  getPendingMessages,
+  removePendingMessage,
+} from "../lib/offlineQueue";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -15,6 +20,65 @@ export const useChatStore = create((set, get) => ({
   hasMoreMessages: false,
   isLoadingMoreMessages: false,
   nextCursor: null,
+  isProcessingQueue: false,
+  disappearingTimer: 0,
+
+  processPendingMessagesQueue: async () => {
+    if (get().isProcessingQueue) return;
+    const pending = await getPendingMessages();
+    if (!pending || pending.length === 0) return;
+
+    set({ isProcessingQueue: true });
+    let sentCount = 0;
+
+    for (const item of pending) {
+      try {
+        set((state) => ({
+          messages: state.messages.map((m) =>
+            m._id === item.tempId ? { ...m, status: "sending" } : m
+          ),
+        }));
+
+        const res = await axiosInstance.post(
+          `/messages/send/${item.receiverId}`,
+          item.payload
+        );
+
+        await removePendingMessage(item.tempId);
+        sentCount++;
+
+        set((state) => ({
+          messages: state.messages.map((m) =>
+            m._id === item.tempId ? res.data : m
+          ),
+          users: state.users.map((u) =>
+            u._id === item.receiverId
+              ? {
+                  ...u,
+                  lastMessage: {
+                    text: res.data.text,
+                    image: res.data.image,
+                    audio: res.data.audio,
+                    audioDuration: res.data.audioDuration,
+                    sticker: res.data.sticker,
+                    createdAt: res.data.createdAt,
+                    senderId: res.data.senderId,
+                  },
+                }
+              : u
+          ),
+        }));
+      } catch (err) {
+        console.warn("Could not send queued message, will retry when online:", err);
+        break;
+      }
+    }
+
+    set({ isProcessingQueue: false });
+    if (sentCount > 0) {
+      toast.success(`Online! ${sentCount} queued message${sentCount > 1 ? "s" : ""} sent 🚀`);
+    }
+  },
 
   setReplyingMessage: (message) => set({ replyingMessage: message }),
 
@@ -41,11 +105,13 @@ export const useChatStore = create((set, get) => ({
       const msgs = res.data.messages || (Array.isArray(res.data) ? res.data : []);
       const hasMore = Boolean(res.data.hasMore);
       const nextCursor = res.data.nextCursor || null;
+      const disappearingTimer = res.data.disappearingTimer || 0;
 
       set({
         messages: msgs,
         hasMoreMessages: hasMore,
         nextCursor,
+        disappearingTimer,
       });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load messages");
@@ -87,13 +153,17 @@ export const useChatStore = create((set, get) => ({
   },
 
   sendMessage: async (messageData) => {
-    const { selectedUser, messages, users, replyingMessage } = get();
+    const { selectedUser, messages, users, replyingMessage, disappearingTimer } = get();
     const authUser = useAuthStore.getState().authUser;
     if (!selectedUser || !authUser) return;
 
     // Generate a unique temporary ID
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const nowIso = new Date().toISOString();
+    const expireAt =
+      disappearingTimer > 0
+        ? new Date(Date.now() + disappearingTimer * 1000).toISOString()
+        : null;
 
     const optimisticMessage = {
       _id: tempId,
@@ -106,6 +176,7 @@ export const useChatStore = create((set, get) => ({
       sticker: messageData.sticker,
       replyTo: replyingMessage ? { ...replyingMessage } : null,
       createdAt: nowIso,
+      expireAt,
       delivered: false,
       seen: false,
       status: "sending",
@@ -135,6 +206,31 @@ export const useChatStore = create((set, get) => ({
       const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
       return timeB - timeA;
     });
+
+    // If client is currently offline, queue immediately in IndexedDB
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      const offlineMsg = { ...optimisticMessage, status: "queued" };
+      set({
+        messages: [...messages, offlineMsg],
+        users: currentUsers,
+        replyingMessage: null,
+      });
+
+      await savePendingMessage({
+        tempId,
+        receiverId: selectedUser._id,
+        payload: {
+          ...messageData,
+          replyTo: replyingMessage?._id || undefined,
+        },
+        createdAt: nowIso,
+      });
+
+      toast("Offline: Message queued! Will send when reconnected 📶", {
+        icon: "⏳",
+      });
+      return;
+    }
 
     set({
       messages: [...messages, optimisticMessage],
@@ -188,13 +284,40 @@ export const useChatStore = create((set, get) => ({
       set({ users: updatedUsers });
     } catch (error) {
       console.error("Error sending message:", error);
-      // Mark optimistic message as failed
-      set({
-        messages: get().messages.map((m) =>
-          m._id === tempId ? { ...m, status: "failed" } : m
-        ),
-      });
-      toast.error(error.response?.data?.message || "Failed to send message");
+      const isNetworkError =
+        (typeof navigator !== "undefined" && !navigator.onLine) ||
+        !error.response ||
+        error.code === "ERR_NETWORK";
+
+      if (isNetworkError) {
+        set({
+          messages: get().messages.map((m) =>
+            m._id === tempId ? { ...m, status: "queued" } : m
+          ),
+        });
+
+        await savePendingMessage({
+          tempId,
+          receiverId: selectedUser._id,
+          payload: {
+            ...messageData,
+            replyTo: replyingMessage?._id || undefined,
+          },
+          createdAt: nowIso,
+        });
+
+        toast("Connection lost. Message queued to auto-send 📶", {
+          icon: "⏳",
+        });
+      } else {
+        // Mark optimistic message as failed
+        set({
+          messages: get().messages.map((m) =>
+            m._id === tempId ? { ...m, status: "failed" } : m
+          ),
+        });
+        toast.error(error.response?.data?.message || "Failed to send message");
+      }
     }
   },
 
@@ -242,6 +365,55 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  setDisappearingTimer: async (timerSeconds) => {
+    const { selectedUser } = get();
+    if (!selectedUser) return;
+
+    const duration = Math.max(0, parseInt(timerSeconds, 10) || 0);
+    try {
+      await axiosInstance.post(`/messages/settings/${selectedUser._id}`, {
+        disappearingTimer: duration,
+      });
+      set({ disappearingTimer: duration });
+
+      if (duration === 0) {
+        toast.success("Disappearing messages turned off");
+      } else if (duration < 3600) {
+        toast.success(
+          `Disappearing messages set to ${Math.round(duration / 60)} minute${
+            Math.round(duration / 60) > 1 ? "s" : ""
+          } ⏱️`
+        );
+      } else if (duration < 86400) {
+        toast.success(
+          `Disappearing messages set to ${Math.round(duration / 3600)} hour${
+            Math.round(duration / 3600) > 1 ? "s" : ""
+          } ⏱️`
+        );
+      } else {
+        toast.success(
+          `Disappearing messages set to ${Math.round(duration / 86400)} day${
+            Math.round(duration / 86400) > 1 ? "s" : ""
+          } ⏱️`
+        );
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to update timer");
+    }
+  },
+
+  pruneExpiredMessages: () => {
+    const now = new Date();
+    const { messages } = get();
+    if (!messages || messages.length === 0) return;
+    const validMessages = messages.filter(
+      (m) => !m.expireAt || new Date(m.expireAt) > now
+    );
+    if (validMessages.length !== messages.length) {
+      set({ messages: validMessages });
+    }
+  },
+
   markMessagesAsSeen: async (userId) => {
     try {
       await axiosInstance.post("/messages/seen", { userId });
@@ -270,6 +442,23 @@ export const useChatStore = create((set, get) => ({
     socket.off("messageReaction");
     socket.off("typing");
     socket.off("stopTyping");
+    socket.off("chatSettingUpdated");
+
+    socket.on("chatSettingUpdated", ({ otherUserId, disappearingTimer }) => {
+      const { selectedUser } = get();
+      if (selectedUser && selectedUser._id === otherUserId) {
+        set({ disappearingTimer });
+        if (disappearingTimer > 0) {
+          toast("Disappearing messages updated for this chat ⏱️", {
+            icon: "⏱️",
+          });
+        } else {
+          toast("Disappearing messages turned off for this chat", {
+            icon: "ℹ️",
+          });
+        }
+      }
+    });
 
     socket.on("newMessage", (newMessage) => {
       const { selectedUser, messages, users } = get();
@@ -454,11 +643,13 @@ export const useChatStore = create((set, get) => ({
     socket.off("userStatusChanged");
     socket.off("userPrivacyChanged");
     socket.off("userProfileUpdated");
+    socket.off("chatSettingUpdated");
   },
 
   setSelectedUser: (selectedUser) => {
     set({
       selectedUser,
+      disappearingTimer: 0,
       replyingMessage: null,
       hasMoreMessages: false,
       isLoadingMoreMessages: false,
@@ -473,3 +664,19 @@ export const useChatStore = create((set, get) => ({
     }
   },
 }));
+
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => {
+    useChatStore.getState().processPendingMessagesQueue();
+  });
+  // Check queue shortly after boot
+  setTimeout(() => {
+    useChatStore.getState().processPendingMessagesQueue();
+  }, 1500);
+
+  // Periodically clean expired ephemeral messages from active view
+  setInterval(() => {
+    useChatStore.getState().pruneExpiredMessages();
+  }, 10000);
+}
+

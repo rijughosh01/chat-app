@@ -382,17 +382,17 @@ const StickerPicker = ({
     <div
       className="
         w-full sm:w-[385px] max-w-[calc(100vw-16px)] h-[min(380px,62dvh)] sm:h-[460px]
-        bg-base-100 dark:bg-[#202c33] border border-base-300 dark:border-base-700
+        bg-base-100 border border-base-300
         shadow-2xl rounded-2xl overflow-hidden flex flex-col z-50
         animate-in fade-in zoom-in-95 duration-150 select-none relative
       "
       onClick={(e) => e.stopPropagation()}
     >
       {/* 1. Header: Search Bar & Navigation Tabs */}
-      <div className="bg-base-200/80 dark:bg-[#111b21] border-b border-base-300 dark:border-base-700 p-2 flex flex-col gap-1.5 flex-shrink-0">
+      <div className="bg-base-200/80 border-b border-base-300 p-2 flex flex-col gap-1.5 flex-shrink-0">
         {/* Search input */}
         <div className="flex items-center gap-2">
-          <div className="flex-1 flex items-center bg-base-100 dark:bg-[#202c33] rounded-full px-3 py-1.5 border border-base-300 dark:border-base-600 focus-within:border-emerald-500 transition-colors">
+          <div className="flex-1 flex items-center bg-base-100 rounded-full px-3 py-1.5 border border-base-300 focus-within:border-emerald-500 transition-colors">
             <Search size={16} className="text-base-content/50 flex-shrink-0 mr-2" />
             <input
               ref={searchInputRef}
@@ -587,7 +587,7 @@ const StickerPicker = ({
                     className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer flex-shrink-0 ${
                       unlimitedCategory === cat.id
                         ? "bg-emerald-600 text-white shadow-xs scale-102"
-                        : "bg-base-200 dark:bg-[#202c33] text-base-content/70 hover:text-base-content hover:bg-base-300"
+                        : "bg-base-200 text-base-content/70 hover:text-base-content hover:bg-base-300"
                     }`}
                   >
                     {cat.label}
@@ -647,8 +647,8 @@ const StickerPicker = ({
       </div>
 
       {/* 3. Bottom Mode Switcher Pill (WhatsApp Web Style: Emoji | Sticker) */}
-      <div className="bg-base-200/90 dark:bg-[#111b21] border-t border-base-300 dark:border-base-700 py-1.5 px-3 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center bg-base-100 dark:bg-[#202c33] rounded-full p-0.5 border border-base-300 dark:border-base-600">
+      <div className="bg-base-200/90 border-t border-base-300 py-1.5 px-3 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center bg-base-100 rounded-full p-0.5 border border-base-300">
           <button
             type="button"
             onClick={onSwitchToEmoji}
@@ -677,8 +677,8 @@ const StickerPicker = ({
 
       {/* 4. WhatsApp Sticker Store Modal (Triggered by '+') */}
       {showPackStore && (
-        <div className="absolute inset-0 bg-base-100 dark:bg-[#111b21] z-50 flex flex-col animate-in fade-in duration-150">
-          <div className="p-3 border-b border-base-300 dark:border-base-700 flex items-center justify-between bg-base-200/50">
+        <div className="absolute inset-0 bg-base-100 z-50 flex flex-col animate-in fade-in duration-150">
+          <div className="p-3 border-b border-base-300 flex items-center justify-between bg-base-200/50">
             <div className="flex items-center gap-2">
               <Package size={18} className="text-emerald-500" />
               <h3 className="text-sm font-bold text-base-content">Sticker Packs</h3>
@@ -692,7 +692,7 @@ const StickerPicker = ({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 divide-y divide-base-300/60 dark:divide-base-700/60">
+          <div className="flex-1 overflow-y-auto p-3 divide-y divide-base-300/60">
             {STICKER_PACKS.filter((p) => !p.isSpecial).map((pack) => {
               const packStickers = CURATED_STICKERS.filter(
                 (s) => s.packId === pack.id || s.packIds?.includes(pack.id)
@@ -704,7 +704,7 @@ const StickerPicker = ({
                       src={pack.avatar}
                       alt={pack.name}
                       referrerPolicy="no-referrer"
-                      className="size-10 object-contain p-1 rounded-lg bg-base-200 dark:bg-base-800 flex-shrink-0"
+                      className="size-10 object-contain p-1 rounded-lg bg-base-200 flex-shrink-0"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold text-base-content truncate">
@@ -772,7 +772,7 @@ const StickerPicker = ({
         onClick={() => handleStickerClick(canonical || sticker)}
         className="
           group relative aspect-square p-2 rounded-xl
-          bg-base-200/35 dark:bg-[#1a252c]/50 hover:bg-base-200 dark:hover:bg-[#2a3942]
+          bg-base-200/35 hover:bg-base-200
           flex items-center justify-center cursor-pointer
           transition-all active:scale-95 overflow-hidden
         "

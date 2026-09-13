@@ -30,7 +30,7 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full pt-20 sm:pt-24 pb-16 px-4 bg-base-200/40">
+    <div className="min-h-[100dvh] w-full pt-20 sm:pt-24 pb-28 sm:pb-16 px-4 bg-base-200/40">
       <div className="max-w-xl mx-auto">
         <div className="bg-base-100/90 backdrop-blur-xl rounded-3xl border border-base-content/10 p-6 sm:p-8 space-y-8 shadow-xl">
           {/* Header */}

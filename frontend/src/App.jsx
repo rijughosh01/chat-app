@@ -1,4 +1,5 @@
 import Navbar from "./components/Navbar";
+import MobileBottomNav from "./components/MobileBottomNav";
 import OfflineBanner from "./components/OfflineBanner";
 
 import HomePage from "./pages/HomePage";
@@ -67,6 +68,7 @@ const App = () => {
         <Route path="/profile" element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
       </Routes>
 
+      <MobileBottomNav />
       <Toaster />
     </div>
   );

@@ -57,7 +57,7 @@ const HomePage = () => {
   return (
     <div
       className={`h-[100dvh] bg-base-200/40 flex flex-col ${
-        selectedUser ? "pt-0 md:pt-16" : "pt-14 sm:pt-16"
+        selectedUser ? "pt-0 md:pt-16 pb-0" : "pt-14 sm:pt-16 pb-16 md:pb-0"
       } overflow-hidden`}
     >
       {/* Push Notifications Opt-In Banner */}

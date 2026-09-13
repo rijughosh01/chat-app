@@ -1,54 +1,113 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
+import ChatSetting from "../models/chatSetting.model.js";
 
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 import { sendPushNotification } from "../lib/webpush.js";
+import { extractUrl, fetchLinkPreview } from "../lib/linkPreview.js";
 
 
 export const getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
+
+    // 1. Fetch all other users (excluding password) in a single fast query
     const filteredUsers = await User.find({
       _id: { $ne: loggedInUserId },
-    }).select("-password");
+    })
+      .select("-password")
+      .lean();
 
-    const usersWithChatDetails = await Promise.all(
-      filteredUsers.map(async (user) => {
-        const lastMessage = await Message.findOne({
-          $or: [
-            { senderId: loggedInUserId, receiverId: user._id },
-            { senderId: user._id, receiverId: loggedInUserId },
+    // 2. Run a single high-performance aggregation on Message collection
+    // to compute the latest message and unread counts for all conversations in one query
+    const now = new Date();
+    const conversationSummaries = await Message.aggregate([
+      {
+        $match: {
+          $and: [
+            {
+              $or: [{ senderId: loggedInUserId }, { receiverId: loggedInUserId }],
+            },
+            {
+              $or: [
+                { expireAt: null },
+                { expireAt: { $exists: false } },
+                { expireAt: { $gt: now } },
+              ],
+            },
           ],
-        }).sort({ createdAt: -1 });
+        },
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ["$senderId", loggedInUserId] },
+              "$receiverId",
+              "$senderId",
+            ],
+          },
+          lastMessage: { $first: "$$ROOT" },
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$receiverId", loggedInUserId] },
+                    { $eq: ["$seen", false] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
 
-        const unreadCount = await Message.countDocuments({
-          senderId: user._id,
-          receiverId: loggedInUserId,
-          seen: false,
-        });
+    // 3. Map conversation summaries into an O(1) lookup Map
+    const summaryMap = new Map();
+    for (const summary of conversationSummaries) {
+      if (summary._id) {
+        summaryMap.set(summary._id.toString(), summary);
+      }
+    }
 
-        return {
-          ...user.toObject(),
-          lastMessage: lastMessage
-            ? {
-                text: lastMessage.text,
-                image: lastMessage.image,
-                audio: lastMessage.audio,
-                audioDuration: lastMessage.audioDuration,
-                sticker: lastMessage.sticker,
-                createdAt: lastMessage.createdAt,
-                senderId: lastMessage.senderId,
-              }
-            : null,
-          unreadCount,
-        };
-      })
-    );
+    // 4. Merge user profiles with conversation details
+    const usersWithChatDetails = filteredUsers.map((user) => {
+      const summary = summaryMap.get(user._id.toString());
+      const lastMessage = summary?.lastMessage;
 
+      return {
+        ...user,
+        lastMessage: lastMessage
+          ? {
+              text: lastMessage.text,
+              image: lastMessage.image,
+              audio: lastMessage.audio,
+              audioDuration: lastMessage.audioDuration,
+              sticker: lastMessage.sticker,
+              createdAt: lastMessage.createdAt,
+              senderId: lastMessage.senderId,
+            }
+          : null,
+        unreadCount: summary ? summary.unreadCount : 0,
+      };
+    });
+
+    // 5. Sort users: conversations with the latest message first, followed by others
     usersWithChatDetails.sort((a, b) => {
-      const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
-      const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      const timeA = a.lastMessage
+        ? new Date(a.lastMessage.createdAt).getTime()
+        : 0;
+      const timeB = b.lastMessage
+        ? new Date(b.lastMessage.createdAt).getTime()
+        : 0;
       return timeB - timeA;
     });
 
@@ -67,10 +126,22 @@ export const getMessages = async (req, res) => {
 
     const limitNum = Math.min(Math.max(parseInt(limit, 10) || 30, 1), 100);
 
+    const now = new Date();
     const filter = {
-      $or: [
-        { senderId: myId, receiverId: userToChatId },
-        { senderId: userToChatId, receiverId: myId },
+      $and: [
+        {
+          $or: [
+            { senderId: myId, receiverId: userToChatId },
+            { senderId: userToChatId, receiverId: myId },
+          ],
+        },
+        {
+          $or: [
+            { expireAt: null },
+            { expireAt: { $exists: false } },
+            { expireAt: { $gt: now } },
+          ],
+        },
       ],
     };
 
@@ -78,14 +149,19 @@ export const getMessages = async (req, res) => {
       filter.createdAt = { $lt: new Date(cursor) };
     }
 
-    const messages = await Message.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(limitNum + 1)
-      .populate({
-        path: "replyTo",
-        select: "text image audio sticker senderId",
-        populate: { path: "senderId", select: "fullName" },
-      });
+    const [messages, chatSetting] = await Promise.all([
+      Message.find(filter)
+        .sort({ createdAt: -1 })
+        .limit(limitNum + 1)
+        .populate({
+          path: "replyTo",
+          select: "text image audio sticker senderId",
+          populate: { path: "senderId", select: "fullName" },
+        }),
+      ChatSetting.findOne({
+        participants: { $all: [myId, userToChatId] },
+      }).lean(),
+    ]);
 
     const hasMore = messages.length > limitNum;
     const pagedMessages = hasMore ? messages.slice(0, limitNum) : messages;
@@ -102,6 +178,7 @@ export const getMessages = async (req, res) => {
       messages: chronologicalMessages,
       hasMore,
       nextCursor,
+      disappearingTimer: chatSetting ? chatSetting.disappearingTimer : 0,
     });
   } catch (error) {
     console.log("Error in getMessages controller: ", error.message);
@@ -164,6 +241,23 @@ export const sendMessage = async (req, res) => {
       }
     }
 
+    let linkPreview = null;
+    if (text) {
+      const extractedUrl = extractUrl(text);
+      if (extractedUrl) {
+        linkPreview = await fetchLinkPreview(extractedUrl);
+      }
+    }
+
+    // Check if disappearing messages are active for this chat
+    const chatSetting = await ChatSetting.findOne({
+      participants: { $all: [senderId, receiverId] },
+    });
+    let expireAt = null;
+    if (chatSetting && chatSetting.disappearingTimer > 0) {
+      expireAt = new Date(Date.now() + chatSetting.disappearingTimer * 1000);
+    }
+
     const receiverSocketId = getReceiverSocketId(receiverId);
     const delivered = !!receiverSocketId;
 
@@ -175,6 +269,8 @@ export const sendMessage = async (req, res) => {
       audio: audioUrl,
       audioDuration: audioDuration || 0,
       sticker: stickerUrl,
+      linkPreview,
+      expireAt,
       delivered, 
       seen: false, 
       replyTo: replyTo || null,
@@ -391,6 +487,75 @@ export const reactToMessage = async (req, res) => {
     res.status(200).json(message);
   } catch (error) {
     console.error("Error in reactToMessage controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getLinkPreview = async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) {
+      return res.status(400).json({ error: "URL query parameter is required" });
+    }
+    const preview = await fetchLinkPreview(url);
+    if (!preview) {
+      return res.status(404).json({ error: "No preview metadata found for this URL" });
+    }
+    res.status(200).json(preview);
+  } catch (error) {
+    console.error("Error in getLinkPreview controller:", error.message);
+    res.status(500).json({ error: "Failed to fetch link preview" });
+  }
+};
+
+export const updateChatSetting = async (req, res) => {
+  try {
+    const { id: otherUserId } = req.params;
+    const myId = req.user._id;
+    const { disappearingTimer = 0 } = req.body;
+
+    const timerNum = Math.max(0, parseInt(disappearingTimer, 10) || 0);
+
+    let setting = await ChatSetting.findOne({
+      participants: { $all: [myId, otherUserId] },
+    });
+
+    if (setting) {
+      setting.disappearingTimer = timerNum;
+      setting.updatedBy = myId;
+      await setting.save();
+    } else {
+      setting = await ChatSetting.create({
+        participants: [myId, otherUserId],
+        disappearingTimer: timerNum,
+        updatedBy: myId,
+      });
+    }
+
+    const receiverSocketId = getReceiverSocketId(otherUserId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("chatSettingUpdated", {
+        otherUserId: myId.toString(),
+        disappearingTimer: timerNum,
+        updatedBy: myId.toString(),
+      });
+    }
+
+    const senderSocketId = getReceiverSocketId(myId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("chatSettingUpdated", {
+        otherUserId: otherUserId.toString(),
+        disappearingTimer: timerNum,
+        updatedBy: myId.toString(),
+      });
+    }
+
+    res.status(200).json({
+      message: "Chat setting updated successfully",
+      disappearingTimer: timerNum,
+    });
+  } catch (error) {
+    console.error("Error in updateChatSetting: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };

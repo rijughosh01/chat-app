@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import helmet from "helmet";
 
 import { connectDB } from "./lib/db.js";
 
@@ -14,6 +15,11 @@ dotenv.config();
 
 const PORT = process.env.PORT;
 
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
 app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
 app.use(

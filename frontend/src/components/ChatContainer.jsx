@@ -13,6 +13,8 @@ import {
   AlertCircle,
   Star,
   ChevronDown,
+  Heart,
+  Timer,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -21,10 +23,37 @@ import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import ImageModal from "./ImageModal";
 import AudioMessagePlayer from "./AudioMessagePlayer";
+import LinkPreviewCard from "./LinkPreviewCard";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { formatMessageTime, formatDateDivider } from "../lib/utils";
 import { addStickerToRecents } from "./StickerPicker";
+
+function renderTextWithLinks(text) {
+  if (!text) return null;
+  const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+  const parts = text.split(urlRegex);
+
+  return parts.map((part, index) => {
+    if (!part) return null;
+    if (part.match(/^(https?:\/\/|www\.)/i)) {
+      const href = part.startsWith("http://") || part.startsWith("https://") ? part : `https://${part}`;
+      return (
+        <a
+          key={index}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="text-emerald-600 dark:text-emerald-400 font-semibold underline decoration-emerald-500/40 hover:decoration-emerald-500 break-all transition-colors"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+}
 
 const QUICK_EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🔥"];
 
@@ -45,6 +74,8 @@ const ChatContainer = () => {
     hasMoreMessages,
     isLoadingMoreMessages,
     loadMoreMessages,
+    disappearingTimer,
+    setDisappearingTimer,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const { wallpaper, wallpaperDoodle } = useThemeStore();
@@ -59,6 +90,17 @@ const ChatContainer = () => {
   const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
   const [modalImage, setModalImage] = useState(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  // Mobile Swipe-to-Reply gesture state
+  const [swipingMsgId, setSwipingMsgId] = useState(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStartRef = useRef({ x: 0, y: 0, msgId: null, isHorizontal: null });
+  const hasTriggeredSwipeHapticRef = useRef(false);
+
+  // Double-tap to React (❤️) state
+  const [doubleTapHeartMsgId, setDoubleTapHeartMsgId] = useState(null);
+  const lastTapRef = useRef({ time: 0, msgId: null });
+  const singleTapTimerRef = useRef(null);
 
 
   useEffect(() => {
@@ -203,6 +245,115 @@ const ChatContainer = () => {
     }
   };
 
+  // Touch handlers for Mobile Swipe-to-Reply
+  const handleTouchStart = (e, message) => {
+    const touch = e.touches[0];
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      msgId: message._id,
+      isHorizontal: null,
+    };
+    hasTriggeredSwipeHapticRef.current = false;
+  };
+
+  const handleTouchMove = (e, message) => {
+    if (touchStartRef.current.msgId !== message._id) return;
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStartRef.current.x;
+    const diffY = touch.clientY - touchStartRef.current.y;
+
+    // Detect gesture direction early so vertical chat scrolling is unaffected
+    if (touchStartRef.current.isHorizontal === null) {
+      if (Math.abs(diffY) > 6 && Math.abs(diffY) > Math.abs(diffX)) {
+        touchStartRef.current.isHorizontal = false;
+        return;
+      }
+      if (diffX > 6 && diffX > Math.abs(diffY)) {
+        touchStartRef.current.isHorizontal = true;
+      }
+    }
+
+    if (touchStartRef.current.isHorizontal) {
+      // Damped horizontal slide up to 52px
+      const offset = Math.min(Math.max(diffX * 0.45, 0), 52);
+      setSwipingMsgId(message._id);
+      setSwipeOffset(offset);
+
+      // Light tactile vibration when hitting the reply threshold
+      if (offset >= 36 && !hasTriggeredSwipeHapticRef.current) {
+        hasTriggeredSwipeHapticRef.current = true;
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          try {
+            navigator.vibrate(15);
+          } catch (err) {}
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = (message) => {
+    if (swipingMsgId === message._id) {
+      if (swipeOffset >= 35) {
+        setReplyingMessage(message);
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          try {
+            navigator.vibrate([20]);
+          } catch (err) {}
+        }
+      }
+      setSwipingMsgId(null);
+      setSwipeOffset(0);
+    }
+    touchStartRef.current = { x: 0, y: 0, msgId: null, isHorizontal: null };
+    hasTriggeredSwipeHapticRef.current = false;
+  };
+
+  // Double-tap to React (❤️) / Single-tap to toggle Floating Action Menu
+  const handleBubbleClick = (e, message) => {
+    // If user was swiping, don't trigger click action
+    if (swipeOffset > 8) return;
+
+    const now = Date.now();
+    const isDoubleTap =
+      lastTapRef.current.msgId === message._id &&
+      now - lastTapRef.current.time < 280;
+
+    if (isDoubleTap) {
+      // Clear pending single-tap menu toggle
+      if (singleTapTimerRef.current) {
+        clearTimeout(singleTapTimerRef.current);
+        singleTapTimerRef.current = null;
+      }
+      lastTapRef.current = { time: 0, msgId: null };
+
+      // Dispatch heart reaction
+      reactToMessage(message._id, "❤️");
+
+      // Trigger Instagram-style floating animated heart burst
+      setDoubleTapHeartMsgId(message._id);
+      setTimeout(() => {
+        setDoubleTapHeartMsgId((prev) => (prev === message._id ? null : prev));
+      }, 750);
+
+      // Haptic confirmation
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        try {
+          navigator.vibrate([15, 30]);
+        } catch (err) {}
+      }
+    } else {
+      // Single tap: set timer to toggle action menu if no second tap arrives
+      lastTapRef.current = { time: now, msgId: message._id };
+      if (singleTapTimerRef.current) {
+        clearTimeout(singleTapTimerRef.current);
+      }
+      singleTapTimerRef.current = setTimeout(() => {
+        setActiveMenuMsgId((prev) => (prev === message._id ? null : message._id));
+      }, 280);
+    }
+  };
+
   const wallpaperClass = `
     ${
       wallpaper === "whatsapp-midnight"
@@ -231,12 +382,12 @@ const ChatContainer = () => {
               setReactionPickerMsgId(null);
             }
           }}
-          className={`flex-1 overflow-y-auto px-2.5 sm:px-4 py-2.5 sm:py-3 space-y-2 overscroll-contain transition-all duration-300 ${wallpaperClass}`}
+          className={`flex-1 overflow-y-auto px-2.5 sm:px-4 py-2.5 sm:py-3 space-y-2 overscroll-contain chat-scroll-touch no-scrollbar transition-all duration-300 ${wallpaperClass}`}
         >
           {/* Top Loading Spinner for Infinite Scroll */}
           {isLoadingMoreMessages && (
             <div className="flex justify-center py-2 animate-in fade-in duration-150">
-              <div className="bg-base-100/90 dark:bg-base-300/80 px-3 py-1 rounded-full shadow-xs flex items-center gap-2 text-xs text-base-content/70 border border-base-300">
+              <div className="bg-base-100/90 px-3 py-1 rounded-full shadow-xs flex items-center gap-2 text-xs text-base-content/70 border border-base-300">
                 <span className="loading loading-spinner loading-xs text-emerald-500"></span>
                 <span>Loading earlier messages...</span>
               </div>
@@ -258,6 +409,33 @@ const ChatContainer = () => {
               <span>Messages are end-to-end encrypted. No one outside of this chat can read them.</span>
             </div>
           </div>
+
+          {/* Disappearing Messages Active Banner (WhatsApp Style) */}
+          {disappearingTimer > 0 && (
+            <div className="flex justify-center my-1 select-none animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="wa-security-pill text-[11px] sm:text-[11.5px] px-3.5 sm:px-4 py-1.5 rounded-lg flex items-center gap-2 max-w-md text-center shadow-xs border border-amber-500/25 bg-amber-500/10 text-amber-900 dark:text-amber-200 font-medium">
+                <Timer size={13} className="flex-shrink-0 text-amber-600 dark:text-amber-400 stroke-[2.2]" />
+                <span>
+                  Disappearing messages are turned on. New messages disappear after{" "}
+                  <strong className="font-bold">
+                    {disappearingTimer < 3600
+                      ? `${Math.round(disappearingTimer / 60)} minute${Math.round(disappearingTimer / 60) > 1 ? "s" : ""}`
+                      : disappearingTimer < 86400
+                      ? `${Math.round(disappearingTimer / 3600)} hour${Math.round(disappearingTimer / 3600) > 1 ? "s" : ""}`
+                      : `${Math.round(disappearingTimer / 86400)} day${Math.round(disappearingTimer / 86400) > 1 ? "s" : ""}`}
+                  </strong>
+                  .
+                  <button
+                    type="button"
+                    onClick={() => setDisappearingTimer(0)}
+                    className="ml-1.5 underline decoration-amber-500/40 hover:decoration-amber-500 font-bold hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    Turn off
+                  </button>
+                </span>
+              </div>
+            </div>
+          )}
 
 
         {messages.length === 0 && (
@@ -294,20 +472,38 @@ const ChatContainer = () => {
               {/* Message Row */}
               <div
                 id={`msg-${message._id}`}
-                className={`flex w-full transition-all duration-300 ${
+                className={`relative flex w-full transition-all duration-300 ${
                   isSender ? "justify-end" : "justify-start"
                 } ${hasReactions ? "mb-3.5" : ""}`}
                 ref={idx === messages.length - 1 ? messageEndRef : null}
               >
+                {/* Swipe to Reply Revealing Indicator (WhatsApp Style) */}
+                {swipingMsgId === message._id && swipeOffset > 6 && (
+                  <div
+                    className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center justify-center size-7 rounded-full bg-emerald-500 text-white shadow-md pointer-events-none z-0 transition-transform"
+                    style={{
+                      opacity: Math.min(swipeOffset / 28, 1),
+                      transform: `translateY(-50%) scale(${Math.min(0.6 + (swipeOffset / 35) * 0.4, 1.15)})`,
+                    }}
+                  >
+                    <Reply size={13} className="stroke-[2.5]" />
+                  </div>
+                )}
+
                 {/* Bubble Container */}
                 <div
-                  onClick={() =>
-                    setActiveMenuMsgId((prev) =>
-                      prev === message._id ? null : message._id
-                    )
+                  onTouchStart={(e) => handleTouchStart(e, message)}
+                  onTouchMove={(e) => handleTouchMove(e, message)}
+                  onTouchEnd={() => handleTouchEnd(message)}
+                  onTouchCancel={() => handleTouchEnd(message)}
+                  onClick={(e) => handleBubbleClick(e, message)}
+                  style={
+                    swipingMsgId === message._id
+                      ? { transform: `translateX(${swipeOffset}px)` }
+                      : { transition: "transform 0.22s cubic-bezier(0.18, 0.89, 0.32, 1.15)" }
                   }
                   className={`
-                    relative group transition-all cursor-pointer
+                    relative group transition-all cursor-pointer select-none
                     ${
                       isSticker
                         ? "p-1 bg-transparent border-none shadow-none"
@@ -319,12 +515,25 @@ const ChatContainer = () => {
                     }
                   `}
                 >
+                  {/* Floating Heart Burst on Double-Tap */}
+                  {doubleTapHeartMsgId === message._id && (
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-40 animate-heart-pop">
+                      <div className="p-2.5 rounded-full bg-red-500/15 backdrop-blur-xs shadow-xl flex items-center justify-center">
+                        <Heart
+                          size={40}
+                          className="text-red-500 fill-red-500 drop-shadow-[0_4px_12px_rgba(239,68,68,0.5)]"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Floating Action Menu on Hover or Tap */}
                   <div
+                    onClick={(e) => e.stopPropagation()}
                     className={`
                       absolute -top-7 ${isSender ? "right-1" : "left-1"}
                       transition-all duration-150
-                      bg-base-100 dark:bg-[#111b21] border border-base-300 shadow-md rounded-full px-1.5 py-0.5
+                      bg-base-100 border border-base-300 shadow-lg rounded-full px-1.5 py-0.5
                       flex items-center gap-0.5 z-20
                       ${
                         activeMenuMsgId === message._id
@@ -336,7 +545,7 @@ const ChatContainer = () => {
                     {/* Reply action */}
                     <button
                       type="button"
-                      className="p-1 hover:bg-base-200 rounded-full text-base-content/70 hover:text-base-content"
+                      className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
                       onClick={() => setReplyingMessage(message)}
                       title="Reply"
                     >
@@ -346,7 +555,7 @@ const ChatContainer = () => {
                     {/* Reaction trigger */}
                     <button
                       type="button"
-                      className="p-1 hover:bg-base-200 rounded-full text-base-content/70 hover:text-base-content"
+                      className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
                       onClick={() =>
                         setReactionPickerMsgId(
                           reactionPickerMsgId === message._id ? null : message._id
@@ -361,7 +570,7 @@ const ChatContainer = () => {
                     {message.text && (
                       <button
                         type="button"
-                        className="p-1 hover:bg-base-200 rounded-full text-base-content/70 hover:text-base-content"
+                        className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
                         onClick={() => handleCopyMessage(message.text)}
                         title="Copy text"
                       >
@@ -373,7 +582,7 @@ const ChatContainer = () => {
                     {message.sticker && (
                       <button
                         type="button"
-                        className="p-1 hover:bg-base-200 rounded-full text-amber-500 hover:text-amber-600 cursor-pointer"
+                        className="p-1 hover:bg-base-200 rounded-full text-amber-500 hover:text-amber-600 transition-colors cursor-pointer"
                         onClick={() => handleSaveSticker(message.sticker)}
                         title="Save to My Stickers ⭐"
                       >
@@ -386,7 +595,7 @@ const ChatContainer = () => {
                       <>
                         <button
                           type="button"
-                          className="p-1 hover:bg-base-200 rounded-full text-blue-500 hover:text-blue-600"
+                          className="p-1 hover:bg-base-200 rounded-full text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
                           onClick={() => {
                             setEditingMessageId(message._id);
                             setEditValue(message.text || "");
@@ -397,7 +606,7 @@ const ChatContainer = () => {
                         </button>
                         <button
                           type="button"
-                          className="p-1 hover:bg-base-200 rounded-full text-red-500 hover:text-red-600"
+                          className="p-1 hover:bg-base-200 rounded-full text-red-500 hover:text-red-600 transition-colors cursor-pointer"
                           onClick={() => deleteMessage(message._id)}
                           title="Delete"
                         >
@@ -410,9 +619,10 @@ const ChatContainer = () => {
                   {/* Quick Reaction Palette */}
                   {reactionPickerMsgId === message._id && (
                     <div
+                      onClick={(e) => e.stopPropagation()}
                       className={`
                         absolute z-30 -top-9 ${isSender ? "right-2" : "left-2"}
-                        bg-base-100 dark:bg-[#202c33] border border-base-300 shadow-xl rounded-full px-2 py-1
+                        bg-base-100 border border-base-300 shadow-xl rounded-full px-2 py-1
                         flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150
                       `}
                     >
@@ -441,7 +651,7 @@ const ChatContainer = () => {
                           message.replyTo._id || message.replyTo
                         );
                       }}
-                      className="mb-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/25 border-l-4 border-emerald-500 cursor-pointer hover:bg-black/10 dark:hover:bg-black/40 transition-colors text-left flex items-center justify-between gap-2 select-none overflow-hidden"
+                      className="mb-1.5 p-2 rounded-xl bg-base-content/5 border-l-4 border-emerald-500 cursor-pointer hover:bg-base-content/10 transition-colors text-left flex items-center justify-between gap-2 select-none overflow-hidden"
                       title="Click to jump to quoted message"
                     >
                       <div className="min-w-0 flex-1">
@@ -564,33 +774,43 @@ const ChatContainer = () => {
                       {/* Sticker Content (WhatsApp Style) */}
                       {message.sticker && (
                         <div
-                          className="relative group/sticker inline-block select-none my-0.5 cursor-pointer"
+                          className="relative group/sticker flex flex-col items-end select-none my-0.5 cursor-pointer"
                           title="Click to save sticker to your collection ⭐"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSaveSticker(message.sticker);
                           }}
                         >
-                          <img
-                            src={message.sticker}
-                            alt="Sticker"
-                            referrerPolicy="no-referrer"
-                            decoding="async"
-                            className="w-28 h-28 sm:w-36 sm:h-36 max-w-[160px] max-h-[160px] object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-200 pointer-events-none select-none"
-                          />
+                          <div className="relative">
+                            <img
+                              src={message.sticker}
+                              alt="Sticker"
+                              referrerPolicy="no-referrer"
+                              decoding="async"
+                              className="w-28 h-28 sm:w-36 sm:h-36 max-w-[160px] max-h-[160px] object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-200 pointer-events-none select-none"
+                            />
 
-                          {/* Quick "Save ⭐" hover badge on the sticker */}
-                          <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full p-1 opacity-0 group-hover/sticker:opacity-100 transition-opacity shadow-md text-[10px] flex items-center justify-center pointer-events-none">
-                            <Star size={10} fill="currentColor" />
+                            {/* Quick "Save ⭐" hover badge on the sticker */}
+                            <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full p-1 opacity-0 group-hover/sticker:opacity-100 transition-opacity shadow-md text-[10px] flex items-center justify-center pointer-events-none">
+                              <Star size={10} fill="currentColor" />
+                            </div>
                           </div>
 
-                          {/* Floating WhatsApp Translucent Time & Status Pill for Stickers */}
+                          {/* Clean Floating Time & Status for Stickers (doesn't cover the artwork) */}
                           {isSticker && (
-                            <div className="absolute bottom-1 right-1 bg-black/55 backdrop-blur-xs text-white px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 select-none shadow-sm">
+                            <div className="mt-0.5 px-1 text-[10px] text-base-content/65 dark:text-base-content/50 flex items-center gap-1 select-none font-medium">
                               <span>{formatMessageTime(message.createdAt)}</span>
+                              {message.expireAt && (
+                                <Timer
+                                  className="size-2.5 text-amber-600 dark:text-amber-400 stroke-[2.5]"
+                                  title="Disappearing message"
+                                />
+                              )}
                               {isSender && (
                                 <span className="inline-flex items-center">
-                                  {message.status === "sending" || (typeof message._id === "string" && message._id.startsWith("temp-")) ? (
+                                  {message.status === "queued" ? (
+                                    <Clock className="size-2.5 text-amber-500 animate-pulse" title="Queued (offline) - will send when online" />
+                                  ) : message.status === "sending" || (typeof message._id === "string" && message._id.startsWith("temp-")) ? (
                                     <Clock className="size-2.5 opacity-80 animate-pulse" title="Sending..." />
                                   ) : message.status === "failed" ? (
                                     <AlertCircle className="size-2.5 text-red-400" title="Failed to send" />
@@ -608,22 +828,41 @@ const ChatContainer = () => {
                         </div>
                       )}
 
+                      {/* OpenGraph Link Preview Card */}
+                      {message.linkPreview && (
+                        <LinkPreviewCard
+                          preview={message.linkPreview}
+                          isSender={isSender}
+                        />
+                      )}
+
                       {/* WhatsApp Text Content + Inline Time & Checkmark */}
                       {!isSticker && (
-                        <div className="flex flex-wrap items-end justify-end gap-x-2 gap-y-1">
+                        <div className="flex flex-wrap items-end justify-end gap-x-2.5 gap-y-1">
                           {message.text && (
-                            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words flex-1 min-w-[60px] font-normal">
-                              {message.text}
+                            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words flex-1 min-w-[70px] font-normal">
+                              {renderTextWithLinks(message.text)}
                             </p>
                           )}
 
                           {/* Inline Time & WhatsApp Checkmarks */}
                           <div className="inline-flex items-center gap-1 text-[11px] opacity-70 select-none pb-0.5 flex-shrink-0 self-end ml-auto">
                             <span>{formatMessageTime(message.createdAt)}</span>
+                            {message.expireAt && (
+                              <Timer
+                                className="size-2.5 text-amber-600 dark:text-amber-400 stroke-[2.5]"
+                                title="Disappearing message"
+                              />
+                            )}
 
                             {isSender && (
                               <span className="inline-flex items-center">
-                                {message.status === "sending" || (typeof message._id === "string" && message._id.startsWith("temp-")) ? (
+                                {message.status === "queued" ? (
+                                  <Clock
+                                    className="size-3 text-amber-500 animate-pulse"
+                                    title="Queued (offline) - will send when online"
+                                  />
+                                ) : message.status === "sending" || (typeof message._id === "string" && message._id.startsWith("temp-")) ? (
                                   <Clock
                                     className="size-3 opacity-60 animate-pulse"
                                     title="Sending..."
@@ -662,7 +901,7 @@ const ChatContainer = () => {
                     <div
                       className={`
                         absolute -bottom-2.5 ${isSender ? "right-2" : "left-2"}
-                        bg-base-100 dark:bg-[#202c33] border border-base-300 rounded-full px-1.5 py-0.5
+                        bg-base-100 border border-base-300 rounded-full px-1.5 py-0.5
                         shadow-xs text-xs flex items-center gap-1 cursor-pointer hover:scale-110 transition-transform z-10
                       `}
                     >
@@ -670,7 +909,10 @@ const ChatContainer = () => {
                         <button
                           key={emoji}
                           type="button"
-                          onClick={() => reactToMessage(message._id, emoji)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            reactToMessage(message._id, emoji);
+                          }}
                           className={`flex items-center gap-0.5 ${
                             hasReacted ? "font-bold text-emerald-500" : ""
                           }`}
@@ -714,7 +956,7 @@ const ChatContainer = () => {
             messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
             setShowScrollBottom(false);
           }}
-          className="absolute right-4 bottom-20 z-30 size-10 rounded-full bg-base-100/95 dark:bg-[#202c33]/95 text-base-content/80 dark:text-[#8696a0] hover:text-emerald-500 dark:hover:text-emerald-400 shadow-lg border border-base-content/10 dark:border-white/10 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer animate-in fade-in zoom-in-75"
+          className="absolute right-4 bottom-20 z-30 size-10 rounded-full bg-base-100/95 text-base-content/80 hover:text-emerald-500 shadow-lg border border-base-300 backdrop-blur-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer animate-in fade-in zoom-in-75"
           title="Scroll to bottom"
         >
           <ChevronDown size={20} className="stroke-[2.5]" />
