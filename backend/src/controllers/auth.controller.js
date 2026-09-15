@@ -39,6 +39,7 @@ export const signup = async (req, res) => {
         fullName: newUser.fullName,
         email: newUser.email,
         profilePic: newUser.profilePic,
+        bio: newUser.bio,
         showOnlineStatus: newUser.showOnlineStatus !== false,
         lastSeen: newUser.lastSeen,
         createdAt: newUser.createdAt,
@@ -76,6 +77,7 @@ export const login = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
+      bio: user.bio || "Hey there! I am using NexChat.",
       showOnlineStatus: user.showOnlineStatus !== false,
       lastSeen: user.lastSeen,
       createdAt: user.createdAt,
@@ -98,17 +100,32 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
+    const { profilePic, bio, fullName } = req.body;
     const userId = req.user._id;
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile pic is required" });
+    const updateFields = {};
+    if (profilePic) {
+      if (profilePic.startsWith("data:")) {
+        const uploadResponse = await cloudinary.uploader.upload(profilePic);
+        updateFields.profilePic = uploadResponse.secure_url;
+      } else {
+        updateFields.profilePic = profilePic;
+      }
+    }
+    if (typeof bio === "string") {
+      updateFields.bio = bio.trim();
+    }
+    if (typeof fullName === "string" && fullName.trim()) {
+      updateFields.fullName = fullName.trim();
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ message: "No profile update fields provided" });
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { profilePic: uploadResponse.secure_url },
+      updateFields,
       { new: true }
     ).select("-password");
 

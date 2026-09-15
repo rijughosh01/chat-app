@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    bio: {
+      type: String,
+      default: "Hey there! I am using NexChat.",
+    },
   },
   { timestamps: true }
 );

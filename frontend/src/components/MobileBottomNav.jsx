@@ -108,23 +108,27 @@ const MobileBottomNav = () => {
             ${currentPath === "/profile" ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-base-content/60 hover:text-base-content font-medium"}
           `}
         >
-          <div className="relative">
+          <div className="relative flex items-center justify-center">
             <div
-              className={`p-0.5 rounded-full transition-all flex items-center justify-center ${
-                currentPath === "/profile" ? "ring-2 ring-emerald-500" : ""
+              className={`size-6 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-all ${
+                currentPath === "/profile"
+                  ? "ring-2 ring-emerald-500 ring-offset-1 ring-offset-base-100"
+                  : "ring-1 ring-base-content/20"
               }`}
             >
               {authUser?.profilePic ? (
                 <img
                   src={authUser.profilePic}
-                  alt={authUser.fullName}
-                  className="w-6 h-6 min-w-6 min-h-6 max-w-6 max-h-6 rounded-full object-cover shadow-xs"
+                  alt={authUser.fullName || "Profile"}
+                  className="w-full h-full object-cover rounded-full flex-shrink-0"
                 />
               ) : (
-                <User className="size-5" />
+                <div className="w-full h-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-[9px]">
+                  {authUser?.fullName ? authUser.fullName.charAt(0).toUpperCase() : "U"}
+                </div>
               )}
             </div>
-            <span className="absolute bottom-0 right-0 size-2 bg-emerald-500 rounded-full ring-1 ring-base-100" />
+            <span className="absolute -bottom-0.5 -right-0.5 size-2 bg-emerald-500 rounded-full ring-1 ring-base-100" />
           </div>
           <span className="text-[10px] tracking-tight mt-0.5">Profile</span>
         </Link>

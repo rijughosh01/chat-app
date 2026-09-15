@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User, Calendar, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Camera, Mail, User, Calendar, ShieldCheck, CheckCircle2, Info, Check } from "lucide-react";
 
 function getInitials(name) {
   if (!name) return "U";
@@ -15,6 +15,14 @@ function getInitials(name) {
 const ProfilePage = () => {
   const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
+  const [bio, setBio] = useState(authUser?.bio || "Hey there! I am using NexChat.");
+  const [isBioDirty, setIsBioDirty] = useState(false);
+
+  useEffect(() => {
+    if (authUser?.bio) {
+      setBio(authUser.bio);
+    }
+  }, [authUser?.bio]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -29,6 +37,12 @@ const ProfilePage = () => {
     };
   };
 
+  const handleSaveBio = async () => {
+    if (!bio.trim()) return;
+    await updateProfile({ bio: bio.trim() });
+    setIsBioDirty(false);
+  };
+
   return (
     <div className="min-h-[100dvh] w-full pt-20 sm:pt-24 pb-28 sm:pb-16 px-4 bg-base-200/40">
       <div className="max-w-xl mx-auto">
@@ -39,7 +53,7 @@ const ProfilePage = () => {
               Your Profile
             </h1>
             <p className="text-xs sm:text-sm text-base-content/60">
-              Manage your personal information and photo
+              Manage your personal information, photo, and bio
             </p>
           </div>
 
@@ -108,6 +122,41 @@ const ProfilePage = () => {
               <div className="px-4 py-3 bg-base-200/60 rounded-2xl border border-base-content/5 font-semibold text-sm text-base-content">
                 {authUser?.email}
               </div>
+            </div>
+
+            {/* Status Bio */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-base-content/70 flex items-center gap-2">
+                  <Info className="size-3.5 text-emerald-500" />
+                  <span>About & Status Bio</span>
+                </label>
+                {isBioDirty && (
+                  <button
+                    type="button"
+                    onClick={handleSaveBio}
+                    disabled={isUpdatingProfile}
+                    className="btn btn-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl gap-1 shadow-xs"
+                  >
+                    <Check size={12} className="stroke-[3]" />
+                    Save
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={bio}
+                onChange={(e) => {
+                  setBio(e.target.value);
+                  setIsBioDirty(e.target.value !== (authUser?.bio || "Hey there! I am using NexChat."));
+                }}
+                maxLength={140}
+                placeholder="Write something about yourself..."
+                className="w-full px-4 py-3 bg-base-200/60 rounded-2xl border border-base-content/10 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/20 font-medium text-sm text-base-content outline-none transition-all"
+              />
+              <span className="text-[11px] text-base-content/40 float-right">
+                {bio.length}/140
+              </span>
             </div>
           </div>
 

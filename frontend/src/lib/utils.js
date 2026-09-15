@@ -75,8 +75,8 @@ export function formatLastSeen(date) {
   const diffMs = now.getTime() - d.getTime();
   const diffMins = Math.floor(diffMs / (1000 * 60));
 
-  if (diffMins < 1) return "last seen just now";
-  if (diffMins < 60) return `last seen ${diffMins}m ago`;
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
 
   const timeStr = d.toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -90,7 +90,7 @@ export function formatLastSeen(date) {
     d.getFullYear() === now.getFullYear();
 
   if (isToday) {
-    return `last seen today at ${timeStr}`;
+    return `today at ${timeStr}`;
   }
 
   const yesterday = new Date();
@@ -101,7 +101,7 @@ export function formatLastSeen(date) {
     d.getFullYear() === yesterday.getFullYear();
 
   if (isYesterday) {
-    return `last seen yesterday at ${timeStr}`;
+    return `yesterday at ${timeStr}`;
   }
 
   const dateStr = d.toLocaleDateString("en-US", {
@@ -109,5 +109,5 @@ export function formatLastSeen(date) {
     day: "numeric",
   });
 
-  return `last seen on ${dateStr} at ${timeStr}`;
+  return `${dateStr} at ${timeStr}`;
 }
