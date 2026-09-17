@@ -3,7 +3,7 @@ import Message from "../models/message.model.js";
 import ChatSetting from "../models/chatSetting.model.js";
 
 import cloudinary from "../lib/cloudinary.js";
-import { getReceiverSocketId, io } from "../lib/socket.js";
+import { getReceiverSocketId, isUserOnline, io } from "../lib/socket.js";
 import { sendPushNotification } from "../lib/webpush.js";
 import { extractUrl, fetchLinkPreview } from "../lib/linkPreview.js";
 
@@ -258,8 +258,7 @@ export const sendMessage = async (req, res) => {
       expireAt = new Date(Date.now() + chatSetting.disappearingTimer * 1000);
     }
 
-    const receiverSocketId = getReceiverSocketId(receiverId);
-    const delivered = !!receiverSocketId;
+    const delivered = isUserOnline(receiverId);
 
     const newMessage = new Message({
       senderId,
@@ -286,9 +285,10 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
-    }
+    // Broadcast to the receiver's room (reaches all active sockets/devices/tabs of receiver)
+    io.to(receiverId.toString()).emit("newMessage", newMessage);
+    // Also emit to the sender's room so any other open tabs/devices stay synchronized
+    io.to(senderId.toString()).emit("newMessage", newMessage);
 
     // Trigger Web Push notification asynchronously (for backgrounded tabs, locked screen, or offline users)
     let previewText = "Sent a message";
@@ -350,10 +350,13 @@ export const deleteMessage = async (req, res) => {
 
     await Message.findByIdAndDelete(messageId);
 
-    const receiverSocketId = getReceiverSocketId(message.receiverId.toString());
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("deleteMessage", { _id: messageId });
-    }
+    const otherUserId =
+      message.senderId.toString() === userId.toString()
+        ? message.receiverId.toString()
+        : message.senderId.toString();
+
+    io.to(otherUserId).emit("deleteMessage", { _id: messageId });
+    io.to(userId.toString()).emit("deleteMessage", { _id: messageId });
 
     res.status(200).json({ message: "Message deleted successfully" });
   } catch (error) {
@@ -393,10 +396,13 @@ export const editMessage = async (req, res) => {
     message.image = imageUrl;
     await message.save();
 
-    const receiverSocketId = getReceiverSocketId(message.receiverId.toString());
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("editMessage", message);
-    }
+    const otherUserId =
+      message.senderId.toString() === userId.toString()
+        ? message.receiverId.toString()
+        : message.senderId.toString();
+
+    io.to(otherUserId).emit("editMessage", message);
+    io.to(userId.toString()).emit("editMessage", message);
 
     res.status(200).json(message);
   } catch (error) {
@@ -413,10 +419,7 @@ export const markMessagesAsSeen = async (req, res) => {
       { senderId: userId, receiverId: myId, seen: false },
       { $set: { seen: true } }
     );
-    const senderSocketId = getReceiverSocketId(userId);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("messagesSeen", { by: myId });
-    }
+    io.to(userId.toString()).emit("messagesSeen", { by: myId });
 
     res.status(200).json({ success: true });
   } catch (error) {
@@ -470,19 +473,20 @@ export const reactToMessage = async (req, res) => {
 
     await message.save();
 
-    // Notify the other user via socket
+    // Notify both users in real-time across all their active devices/tabs
     const otherUserId =
       message.senderId.toString() === userId.toString()
         ? message.receiverId.toString()
         : message.senderId.toString();
 
-    const otherSocketId = getReceiverSocketId(otherUserId);
-    if (otherSocketId) {
-      io.to(otherSocketId).emit("messageReaction", {
-        messageId: message._id,
-        reactions: message.reactions,
-      });
-    }
+    io.to(otherUserId).emit("messageReaction", {
+      messageId: message._id,
+      reactions: message.reactions,
+    });
+    io.to(userId.toString()).emit("messageReaction", {
+      messageId: message._id,
+      reactions: message.reactions,
+    });
 
     res.status(200).json(message);
   } catch (error) {
@@ -532,23 +536,17 @@ export const updateChatSetting = async (req, res) => {
       });
     }
 
-    const receiverSocketId = getReceiverSocketId(otherUserId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("chatSettingUpdated", {
-        otherUserId: myId.toString(),
-        disappearingTimer: timerNum,
-        updatedBy: myId.toString(),
-      });
-    }
+    io.to(otherUserId.toString()).emit("chatSettingUpdated", {
+      otherUserId: myId.toString(),
+      disappearingTimer: timerNum,
+      updatedBy: myId.toString(),
+    });
 
-    const senderSocketId = getReceiverSocketId(myId);
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("chatSettingUpdated", {
-        otherUserId: otherUserId.toString(),
-        disappearingTimer: timerNum,
-        updatedBy: myId.toString(),
-      });
-    }
+    io.to(myId.toString()).emit("chatSettingUpdated", {
+      otherUserId: otherUserId.toString(),
+      disappearingTimer: timerNum,
+      updatedBy: myId.toString(),
+    });
 
     res.status(200).json({
       message: "Chat setting updated successfully",

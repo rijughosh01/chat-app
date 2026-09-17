@@ -106,6 +106,11 @@ export const useAuthStore = create((set, get) => ({
       query: {
         userId: authUser._id,
       },
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
     socket.connect();
 

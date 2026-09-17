@@ -22,6 +22,7 @@ export const useChatStore = create((set, get) => ({
   nextCursor: null,
   isProcessingQueue: false,
   disappearingTimer: 0,
+  markMessagesAsSeenTimeout: null,
 
   processPendingMessagesQueue: async () => {
     if (get().isProcessingQueue) return;
@@ -153,7 +154,7 @@ export const useChatStore = create((set, get) => ({
   },
 
   sendMessage: async (messageData) => {
-    const { selectedUser, messages, users, replyingMessage, disappearingTimer } = get();
+    const { selectedUser, disappearingTimer } = get();
     const authUser = useAuthStore.getState().authUser;
     if (!selectedUser || !authUser) return;
 
@@ -164,6 +165,8 @@ export const useChatStore = create((set, get) => ({
       disappearingTimer > 0
         ? new Date(Date.now() + disappearingTimer * 1000).toISOString()
         : null;
+
+    const replyingMessage = get().replyingMessage;
 
     const optimisticMessage = {
       _id: tempId,
@@ -182,38 +185,39 @@ export const useChatStore = create((set, get) => ({
       status: "sending",
     };
 
-    // Immediately display the message in the chat and update sidebar (0ms latency!)
-    const currentUsers = users.map((u) => {
-      if (u._id === selectedUser._id) {
-        return {
-          ...u,
-          lastMessage: {
-            text: messageData.text,
-            image: messageData.image,
-            audio: messageData.audio,
-            audioDuration: messageData.audioDuration,
-            sticker: messageData.sticker,
-            createdAt: nowIso,
-            senderId: authUser._id,
-          },
-        };
-      }
-      return u;
-    });
-
-    currentUsers.sort((a, b) => {
-      const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
-      const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
-      return timeB - timeA;
-    });
-
     // If client is currently offline, queue immediately in IndexedDB
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       const offlineMsg = { ...optimisticMessage, status: "queued" };
-      set({
-        messages: [...messages, offlineMsg],
-        users: currentUsers,
-        replyingMessage: null,
+      set((state) => {
+        const updatedUsers = state.users.map((u) => {
+          if (u._id === selectedUser._id) {
+            return {
+              ...u,
+              lastMessage: {
+                text: messageData.text,
+                image: messageData.image,
+                audio: messageData.audio,
+                audioDuration: messageData.audioDuration,
+                sticker: messageData.sticker,
+                createdAt: nowIso,
+                senderId: authUser._id,
+              },
+            };
+          }
+          return u;
+        });
+
+        updatedUsers.sort((a, b) => {
+          const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
+          const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
+
+        return {
+          messages: [...state.messages, offlineMsg],
+          users: updatedUsers,
+          replyingMessage: null,
+        };
       });
 
       await savePendingMessage({
@@ -232,10 +236,37 @@ export const useChatStore = create((set, get) => ({
       return;
     }
 
-    set({
-      messages: [...messages, optimisticMessage],
-      users: currentUsers,
-      replyingMessage: null,
+    // Immediately display the message in the chat and update sidebar (0ms latency!)
+    set((state) => {
+      const updatedUsers = state.users.map((u) => {
+        if (u._id === selectedUser._id) {
+          return {
+            ...u,
+            lastMessage: {
+              text: messageData.text,
+              image: messageData.image,
+              audio: messageData.audio,
+              audioDuration: messageData.audioDuration,
+              sticker: messageData.sticker,
+              createdAt: nowIso,
+              senderId: authUser._id,
+            },
+          };
+        }
+        return u;
+      });
+
+      updatedUsers.sort((a, b) => {
+        const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
+        const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+
+      return {
+        messages: [...state.messages, optimisticMessage],
+        users: updatedUsers,
+        replyingMessage: null,
+      };
     });
 
     try {
@@ -249,39 +280,47 @@ export const useChatStore = create((set, get) => ({
         payload
       );
 
-      // Seamlessly replace optimistic message with the confirmed server message
-      set({
-        messages: get().messages.map((m) =>
-          m._id === tempId ? res.data : m
-        ),
-      });
-
-      // Update sidebar with confirmed server data
-      const updatedUsers = get().users.map((u) => {
-        if (u._id === selectedUser._id) {
-          return {
-            ...u,
-            lastMessage: {
-              text: res.data.text,
-              image: res.data.image,
-              audio: res.data.audio,
-              audioDuration: res.data.audioDuration,
-              sticker: res.data.sticker,
-              createdAt: res.data.createdAt,
-              senderId: res.data.senderId,
-            },
-          };
+      // Seamlessly replace optimistic message with the confirmed server message without duplicating
+      set((state) => {
+        const alreadyExists = state.messages.some((m) => m._id === res.data._id);
+        let newMessages;
+        if (alreadyExists) {
+          newMessages = state.messages.filter((m) => m._id !== tempId);
+        } else {
+          newMessages = state.messages.map((m) =>
+            m._id === tempId ? res.data : m
+          );
         }
-        return u;
-      });
 
-      updatedUsers.sort((a, b) => {
-        const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
-        const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
-        return timeB - timeA;
-      });
+        const updatedUsers = state.users.map((u) => {
+          if (u._id === selectedUser._id) {
+            return {
+              ...u,
+              lastMessage: {
+                text: res.data.text,
+                image: res.data.image,
+                audio: res.data.audio,
+                audioDuration: res.data.audioDuration,
+                sticker: res.data.sticker,
+                createdAt: res.data.createdAt,
+                senderId: res.data.senderId,
+              },
+            };
+          }
+          return u;
+        });
 
-      set({ users: updatedUsers });
+        updatedUsers.sort((a, b) => {
+          const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
+          const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
+
+        return {
+          messages: newMessages,
+          users: updatedUsers,
+        };
+      });
     } catch (error) {
       console.error("Error sending message:", error);
       const isNetworkError =
@@ -290,11 +329,11 @@ export const useChatStore = create((set, get) => ({
         error.code === "ERR_NETWORK";
 
       if (isNetworkError) {
-        set({
-          messages: get().messages.map((m) =>
+        set((state) => ({
+          messages: state.messages.map((m) =>
             m._id === tempId ? { ...m, status: "queued" } : m
           ),
-        });
+        }));
 
         await savePendingMessage({
           tempId,
@@ -311,11 +350,11 @@ export const useChatStore = create((set, get) => ({
         });
       } else {
         // Mark optimistic message as failed
-        set({
-          messages: get().messages.map((m) =>
+        set((state) => ({
+          messages: state.messages.map((m) =>
             m._id === tempId ? { ...m, status: "failed" } : m
           ),
-        });
+        }));
         toast.error(error.response?.data?.message || "Failed to send message");
       }
     }
@@ -324,9 +363,9 @@ export const useChatStore = create((set, get) => ({
   deleteMessage: async (messageId) => {
     try {
       await axiosInstance.delete(`/messages/delete/${messageId}`);
-      set({
-        messages: get().messages.filter((msg) => msg._id !== messageId),
-      });
+      set((state) => ({
+        messages: state.messages.filter((msg) => msg._id !== messageId),
+      }));
       toast.success("Message deleted");
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to delete message");
@@ -339,11 +378,11 @@ export const useChatStore = create((set, get) => ({
         `/messages/edit/${messageId}`,
         newData
       );
-      set({
-        messages: get().messages.map((msg) =>
+      set((state) => ({
+        messages: state.messages.map((msg) =>
           msg._id === messageId ? res.data : msg
         ),
-      });
+      }));
       toast.success("Message edited");
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to edit message");
@@ -355,11 +394,11 @@ export const useChatStore = create((set, get) => ({
       const res = await axiosInstance.post(`/messages/react/${messageId}`, {
         emoji,
       });
-      set({
-        messages: get().messages.map((msg) =>
+      set((state) => ({
+        messages: state.messages.map((msg) =>
           msg._id === messageId ? res.data : msg
         ),
-      });
+      }));
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to react to message");
     }
@@ -414,19 +453,92 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  debouncedMarkMessagesAsSeen: (userId) => {
+    if (!userId) return;
+    const { markMessagesAsSeenTimeout } = get();
+    if (markMessagesAsSeenTimeout) {
+      clearTimeout(markMessagesAsSeenTimeout);
+    }
+    const timeout = setTimeout(() => {
+      get().markMessagesAsSeen(userId);
+    }, 300);
+    set({ markMessagesAsSeenTimeout: timeout });
+  },
+
   markMessagesAsSeen: async (userId) => {
+    if (!userId) return;
     try {
       await axiosInstance.post("/messages/seen", { userId });
-      set({
-        messages: get().messages.map((msg) =>
-          msg.senderId === userId ? { ...msg, seen: true } : msg
+      set((state) => ({
+        messages: state.messages.map((msg) => {
+          const senderId = (msg.senderId?._id || msg.senderId)?.toString();
+          return senderId === userId.toString() ? { ...msg, seen: true } : msg;
+        }),
+        users: state.users.map((u) =>
+          u._id?.toString() === userId.toString() ? { ...u, unreadCount: 0 } : u
         ),
-        users: get().users.map((u) =>
-          u._id === userId ? { ...u, unreadCount: 0 } : u
-        ),
-      });
+      }));
     } catch (error) {
       console.error("Failed to mark messages as seen:", error);
+    }
+  },
+
+  syncLatestMessages: async (userId) => {
+    if (!userId) return;
+    try {
+      const res = await axiosInstance.get(`/messages/${userId}?limit=30`);
+      const fetched = res.data.messages || (Array.isArray(res.data) ? res.data : []);
+      if (!fetched || fetched.length === 0) return;
+
+      set((state) => {
+        if (state.selectedUser?._id?.toString() !== userId.toString()) return state;
+
+        const currentMap = new Map();
+        state.messages.forEach((m) => currentMap.set(m._id, m));
+
+        let hasChange = false;
+        fetched.forEach((fm) => {
+          if (!currentMap.has(fm._id)) {
+            // Check if there was an optimistic temp message matching this
+            const tempMatch = Array.from(currentMap.values()).find(
+              (m) =>
+                m._id?.startsWith?.("temp-") &&
+                (m.senderId?._id || m.senderId)?.toString() ===
+                  (fm.senderId?._id || fm.senderId)?.toString() &&
+                ((m.text && m.text === fm.text) ||
+                  (m.image && m.image === fm.image) ||
+                  (m.audio && m.audio === fm.audio) ||
+                  (m.sticker && m.sticker === fm.sticker))
+            );
+            if (tempMatch) {
+              currentMap.delete(tempMatch._id);
+            }
+            currentMap.set(fm._id, fm);
+            hasChange = true;
+          } else {
+            // Update seen or delivered status if changed
+            const existing = currentMap.get(fm._id);
+            if (
+              existing.seen !== fm.seen ||
+              existing.delivered !== fm.delivered ||
+              existing.reactions?.length !== fm.reactions?.length
+            ) {
+              currentMap.set(fm._id, { ...existing, ...fm });
+              hasChange = true;
+            }
+          }
+        });
+
+        if (!hasChange) return state;
+
+        const sorted = Array.from(currentMap.values()).sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+
+        return { messages: sorted };
+      });
+    } catch (err) {
+      console.error("Error syncing latest messages:", err);
     }
   },
 
@@ -435,6 +547,7 @@ export const useChatStore = create((set, get) => ({
     if (!socket) return;
 
     // Clean up first to avoid duplicate listeners
+    socket.off("connect");
     socket.off("newMessage");
     socket.off("deleteMessage");
     socket.off("editMessage");
@@ -444,9 +557,18 @@ export const useChatStore = create((set, get) => ({
     socket.off("stopTyping");
     socket.off("chatSettingUpdated");
 
+    // Automatically sync messages on reconnect
+    socket.on("connect", () => {
+      const { selectedUser, syncLatestMessages, processPendingMessagesQueue } = get();
+      if (selectedUser?._id) {
+        syncLatestMessages(selectedUser._id);
+      }
+      processPendingMessagesQueue();
+    });
+
     socket.on("chatSettingUpdated", ({ otherUserId, disappearingTimer }) => {
       const { selectedUser } = get();
-      if (selectedUser && selectedUser._id === otherUserId) {
+      if (selectedUser && selectedUser._id?.toString() === otherUserId?.toString()) {
         set({ disappearingTimer });
         if (disappearingTimer > 0) {
           toast("Disappearing messages updated for this chat ⏱️", {
@@ -461,85 +583,126 @@ export const useChatStore = create((set, get) => ({
     });
 
     socket.on("newMessage", (newMessage) => {
-      const { selectedUser, messages, users } = get();
-      playNotificationSound();
+      const authUser = useAuthStore.getState().authUser;
+      const { selectedUser } = get();
 
-      const isFromSelectedUser =
-        selectedUser && newMessage.senderId === selectedUser._id;
+      const senderId = (newMessage.senderId?._id || newMessage.senderId)?.toString();
+      const receiverId = (newMessage.receiverId?._id || newMessage.receiverId)?.toString();
+      const selectedUserId = selectedUser?._id?.toString();
+      const authUserId = authUser?._id?.toString();
 
-      if (isFromSelectedUser) {
-        set({
-          messages: [...messages, newMessage],
+      const isFromSelectedUser = Boolean(selectedUserId && senderId === selectedUserId);
+      const isSentByMeToSelectedUser = Boolean(
+        selectedUserId && authUserId && senderId === authUserId && receiverId === selectedUserId
+      );
+
+      // Only play notification sound if message is from another user
+      if (senderId !== authUserId) {
+        playNotificationSound();
+      }
+
+      if (isFromSelectedUser || isSentByMeToSelectedUser) {
+        set((state) => {
+          // Check if already in messages
+          const alreadyExists = state.messages.some((m) => m._id === newMessage._id);
+          if (alreadyExists) return state;
+
+          // Check for matching optimistic temporary message
+          const tempIndex = state.messages.findIndex(
+            (m) =>
+              m._id?.startsWith?.("temp-") &&
+              (m.senderId?._id || m.senderId)?.toString() === senderId &&
+              ((m.text && m.text === newMessage.text) ||
+                (m.image && m.image === newMessage.image) ||
+                (m.audio && m.audio === newMessage.audio) ||
+                (m.sticker && m.sticker === newMessage.sticker))
+          );
+
+          let updatedMessages;
+          if (tempIndex !== -1) {
+            updatedMessages = [...state.messages];
+            updatedMessages[tempIndex] = newMessage;
+          } else {
+            updatedMessages = [...state.messages, newMessage];
+          }
+
+          return { messages: updatedMessages };
         });
-        if (!newMessage.seen) {
-          get().markMessagesAsSeen(selectedUser._id);
+
+        if (isFromSelectedUser && !newMessage.seen) {
+          get().debouncedMarkMessagesAsSeen(selectedUserId);
         }
       }
 
       // Update last message & unread badge in sidebar
-      const updatedUsers = users.map((user) => {
-        if (user._id === newMessage.senderId) {
-          return {
-            ...user,
-            lastMessage: {
-              text: newMessage.text,
-              image: newMessage.image,
-              audio: newMessage.audio,
-              audioDuration: newMessage.audioDuration,
-              sticker: newMessage.sticker,
-              createdAt: newMessage.createdAt,
-              senderId: newMessage.senderId,
-            },
-            unreadCount: isFromSelectedUser
-              ? 0
-              : (user.unreadCount || 0) + 1,
-          };
-        }
-        return user;
-      });
+      set((state) => {
+        const otherUserId = senderId === authUserId ? receiverId : senderId;
+        const updatedUsers = state.users.map((user) => {
+          if (user._id?.toString() === otherUserId) {
+            return {
+              ...user,
+              lastMessage: {
+                text: newMessage.text,
+                image: newMessage.image,
+                audio: newMessage.audio,
+                audioDuration: newMessage.audioDuration,
+                sticker: newMessage.sticker,
+                createdAt: newMessage.createdAt,
+                senderId: newMessage.senderId,
+              },
+              unreadCount: isFromSelectedUser
+                ? 0
+                : senderId === authUserId
+                ? user.unreadCount || 0
+                : (user.unreadCount || 0) + 1,
+            };
+          }
+          return user;
+        });
 
-      // Move latest conversation to top
-      updatedUsers.sort((a, b) => {
-        const timeA = a.lastMessage
-          ? new Date(a.lastMessage.createdAt).getTime()
-          : 0;
-        const timeB = b.lastMessage
-          ? new Date(b.lastMessage.createdAt).getTime()
-          : 0;
-        return timeB - timeA;
-      });
+        updatedUsers.sort((a, b) => {
+          const timeA = a.lastMessage
+            ? new Date(a.lastMessage.createdAt).getTime()
+            : 0;
+          const timeB = b.lastMessage
+            ? new Date(b.lastMessage.createdAt).getTime()
+            : 0;
+          return timeB - timeA;
+        });
 
-      set({ users: updatedUsers });
+        return { users: updatedUsers };
+      });
     });
 
     socket.on("deleteMessage", (deleted) => {
-      set({
-        messages: get().messages.filter((msg) => msg._id !== deleted._id),
-      });
+      set((state) => ({
+        messages: state.messages.filter((msg) => msg._id !== deleted._id),
+      }));
     });
 
     socket.on("editMessage", (editedMessage) => {
-      set({
-        messages: get().messages.map((msg) =>
+      set((state) => ({
+        messages: state.messages.map((msg) =>
           msg._id === editedMessage._id ? editedMessage : msg
         ),
-      });
+      }));
     });
 
     socket.on("messageReaction", ({ messageId, reactions }) => {
-      set({
-        messages: get().messages.map((msg) =>
+      set((state) => ({
+        messages: state.messages.map((msg) =>
           msg._id === messageId ? { ...msg, reactions } : msg
         ),
-      });
+      }));
     });
 
     socket.on("messagesSeen", ({ by }) => {
-      set({
-        messages: get().messages.map((msg) =>
-          msg.receiverId === by ? { ...msg, seen: true } : msg
-        ),
-      });
+      set((state) => ({
+        messages: state.messages.map((msg) => {
+          const receiverId = (msg.receiverId?._id || msg.receiverId)?.toString();
+          return receiverId === by?.toString() ? { ...msg, seen: true } : msg;
+        }),
+      }));
     });
 
     socket.on("typing", ({ from }) => {
@@ -633,6 +796,7 @@ export const useChatStore = create((set, get) => ({
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
+    socket.off("connect");
     socket.off("newMessage");
     socket.off("deleteMessage");
     socket.off("editMessage");
@@ -667,8 +831,21 @@ export const useChatStore = create((set, get) => ({
 
 if (typeof window !== "undefined") {
   window.addEventListener("online", () => {
-    useChatStore.getState().processPendingMessagesQueue();
+    const { selectedUser, syncLatestMessages, processPendingMessagesQueue } =
+      useChatStore.getState();
+    if (selectedUser?._id) {
+      syncLatestMessages(selectedUser._id);
+    }
+    processPendingMessagesQueue();
   });
+
+  window.addEventListener("focus", () => {
+    const { selectedUser, syncLatestMessages } = useChatStore.getState();
+    if (selectedUser?._id) {
+      syncLatestMessages(selectedUser._id);
+    }
+  });
+
   // Check queue shortly after boot
   setTimeout(() => {
     useChatStore.getState().processPendingMessagesQueue();

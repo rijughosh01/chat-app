@@ -110,13 +110,10 @@ const ChatContainer = () => {
     getMessages(selectedUser._id);
     subscribeToMessages();
     markMessagesAsSeen(selectedUser._id);
-
-    return () => unsubscribeFromMessages();
   }, [
     selectedUser?._id,
     getMessages,
     subscribeToMessages,
-    unsubscribeFromMessages,
     markMessagesAsSeen,
   ]);
 

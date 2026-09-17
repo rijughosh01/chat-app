@@ -11,70 +11,117 @@ const io = new Server(server, {
     origin: ["http://localhost:5173", "https://nexchatapp-tau.vercel.app"],
     credentials: true,
   },
+  pingTimeout: 30000,
+  pingInterval: 25000,
 });
 
-export function getReceiverSocketId(userId) {
-  return userSocketMap[userId];
-}
-
+// Map of userId -> Set of socket IDs
 const userSocketMap = {};
 
-io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
+export function isUserOnline(userId) {
+  if (!userId) return false;
+  const uid = userId.toString();
+  return Boolean(userSocketMap[uid] && userSocketMap[uid].size > 0);
+}
 
-  const userId = socket.handshake.query.userId;
+export function getReceiverSocketId(userId) {
+  if (!userId) return null;
+  const uid = userId.toString();
+  const sockets = userSocketMap[uid];
+  return sockets && sockets.size > 0 ? Array.from(sockets)[0] : null;
+}
+
+export function getUserSocketIds(userId) {
+  if (!userId) return [];
+  const uid = userId.toString();
+  return userSocketMap[uid] ? Array.from(userSocketMap[uid]) : [];
+}
+
+io.on("connection", (socket) => {
+  const rawUserId = socket.handshake.query.userId;
+  const userId = rawUserId ? rawUserId.toString() : null;
+
+  console.log(`Socket connected: ${socket.id} (User: ${userId || "Guest"})`);
+
   if (userId) {
-    userSocketMap[userId] = socket.id;
-    io.emit("userStatusChanged", {
-      userId,
-      isOnline: true,
-      lastSeen: new Date(),
-    });
+    if (!userSocketMap[userId]) {
+      userSocketMap[userId] = new Set();
+    }
+    userSocketMap[userId].add(socket.id);
+
+    // Join dedicated user room for reliable broadcast to all user devices/tabs
+    socket.join(userId);
+
+    // If this is the user's first active connection, broadcast online status
+    if (userSocketMap[userId].size === 1) {
+      io.emit("userStatusChanged", {
+        userId,
+        isOnline: true,
+        lastSeen: new Date(),
+      });
+    }
   }
 
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  // Broadcast list of currently online user IDs
+  io.emit(
+    "getOnlineUsers",
+    Object.keys(userSocketMap).filter(
+      (uid) => userSocketMap[uid] && userSocketMap[uid].size > 0
+    )
+  );
 
   socket.on("disconnect", async () => {
-    console.log("A user disconnected", socket.id);
-    delete userSocketMap[userId];
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    console.log(`Socket disconnected: ${socket.id} (User: ${userId || "Guest"})`);
 
-    if (userId) {
-      try {
-        const now = new Date();
-        const updatedUser = await User.findByIdAndUpdate(
-          userId,
-          { lastSeen: now },
-          { new: true }
-        ).select("-password");
+    if (userId && userSocketMap[userId]) {
+      userSocketMap[userId].delete(socket.id);
 
-        if (updatedUser) {
-          io.emit("userStatusChanged", {
+      // Only mark as offline when the user has NO remaining active sockets
+      if (userSocketMap[userId].size === 0) {
+        delete userSocketMap[userId];
+
+        io.emit(
+          "getOnlineUsers",
+          Object.keys(userSocketMap).filter(
+            (uid) => userSocketMap[uid] && userSocketMap[uid].size > 0
+          )
+        );
+
+        try {
+          const now = new Date();
+          const updatedUser = await User.findByIdAndUpdate(
             userId,
-            isOnline: false,
-            lastSeen: updatedUser.lastSeen,
-            showOnlineStatus: updatedUser.showOnlineStatus !== false,
-          });
+            { lastSeen: now },
+            { new: true }
+          ).select("-password");
+
+          if (updatedUser) {
+            io.emit("userStatusChanged", {
+              userId,
+              isOnline: false,
+              lastSeen: updatedUser.lastSeen,
+              showOnlineStatus: updatedUser.showOnlineStatus !== false,
+            });
+          }
+        } catch (err) {
+          console.error("Error updating lastSeen on disconnect:", err);
         }
-      } catch (err) {
-        console.error("Error updating lastSeen on disconnect:", err);
       }
     }
   });
 
   socket.on("typing", ({ to, from }) => {
-    const receiverSocketId = userSocketMap[to];
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("typing", { from });
+    if (to) {
+      io.to(to.toString()).emit("typing", { from });
     }
   });
 
   socket.on("stopTyping", ({ to, from }) => {
-    const receiverSocketId = userSocketMap[to];
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("stopTyping", { from });
+    if (to) {
+      io.to(to.toString()).emit("stopTyping", { from });
     }
   });
 });
 
-export { io, app, server };
+export { io, app, server, userSocketMap };
+
