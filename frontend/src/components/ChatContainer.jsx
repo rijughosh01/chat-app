@@ -445,7 +445,9 @@ const ChatContainer = () => {
         )}
 
         {messages.map((message, idx) => {
-          const isSender = message.senderId === authUser._id;
+          const isSender =
+            (message.senderId?._id || message.senderId)?.toString() ===
+            authUser?._id?.toString();
           const currentDate = formatDateDivider(message.createdAt);
           const prevDate =
             idx > 0 ? formatDateDivider(messages[idx - 1].createdAt) : null;

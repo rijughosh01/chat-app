@@ -275,52 +275,86 @@ export const useChatStore = create((set, get) => ({
         replyTo: replyingMessage?._id || undefined,
       };
 
-      const res = await axiosInstance.post(
-        `/messages/send/${selectedUser._id}`,
-        payload
-      );
-
-      // Seamlessly replace optimistic message with the confirmed server message without duplicating
-      set((state) => {
-        const alreadyExists = state.messages.some((m) => m._id === res.data._id);
-        let newMessages;
-        if (alreadyExists) {
-          newMessages = state.messages.filter((m) => m._id !== tempId);
-        } else {
-          newMessages = state.messages.map((m) =>
-            m._id === tempId ? res.data : m
-          );
-        }
-
-        const updatedUsers = state.users.map((u) => {
-          if (u._id === selectedUser._id) {
-            return {
-              ...u,
-              lastMessage: {
-                text: res.data.text,
-                image: res.data.image,
-                audio: res.data.audio,
-                audioDuration: res.data.audioDuration,
-                sticker: res.data.sticker,
-                createdAt: res.data.createdAt,
-                senderId: res.data.senderId,
-              },
-            };
+      const finalizeSentMessage = (confirmedMessage) => {
+        set((state) => {
+          const alreadyExists = state.messages.some((m) => m._id === confirmedMessage._id);
+          let newMessages;
+          if (alreadyExists) {
+            newMessages = state.messages.filter((m) => m._id !== tempId);
+          } else {
+            newMessages = state.messages.map((m) =>
+              m._id === tempId ? confirmedMessage : m
+            );
           }
-          return u;
-        });
 
-        updatedUsers.sort((a, b) => {
-          const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
-          const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
-          return timeB - timeA;
-        });
+          const updatedUsers = state.users.map((u) => {
+            if (u._id === selectedUser._id) {
+              return {
+                ...u,
+                lastMessage: {
+                  text: confirmedMessage.text,
+                  image: confirmedMessage.image,
+                  audio: confirmedMessage.audio,
+                  audioDuration: confirmedMessage.audioDuration,
+                  sticker: confirmedMessage.sticker,
+                  createdAt: confirmedMessage.createdAt,
+                  senderId: confirmedMessage.senderId,
+                },
+              };
+            }
+            return u;
+          });
 
-        return {
-          messages: newMessages,
-          users: updatedUsers,
-        };
-      });
+          updatedUsers.sort((a, b) => {
+            const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
+            const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
+            return timeB - timeA;
+          });
+
+          return {
+            messages: newMessages,
+            users: updatedUsers,
+          };
+        });
+      };
+
+      const socket = useAuthStore.getState().socket;
+      let sentViaSocket = false;
+
+      // Fast-path: Send directly over open WebSocket (<30ms roundtrip)
+      if (socket && socket.connected) {
+        try {
+          const socketMessage = await new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error("Socket send timeout")), 3500);
+            socket.emit(
+              "sendMessage",
+              { ...payload, receiverId: selectedUser._id },
+              (res) => {
+                clearTimeout(timer);
+                if (res?.status === "ok" && res?.message) {
+                  resolve(res.message);
+                } else {
+                  reject(new Error(res?.error || "Socket send error"));
+                }
+              }
+            );
+          });
+
+          finalizeSentMessage(socketMessage);
+          sentViaSocket = true;
+        } catch (socketErr) {
+          console.warn("Socket fast-path failed, falling back to HTTP REST:", socketErr.message);
+        }
+      }
+
+      // Fallback path: HTTP REST API (for when socket is reconnecting or disconnected)
+      if (!sentViaSocket) {
+        const res = await axiosInstance.post(
+          `/messages/send/${selectedUser._id}`,
+          payload
+        );
+        finalizeSentMessage(res.data);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       const isNetworkError =
@@ -468,11 +502,16 @@ export const useChatStore = create((set, get) => ({
   markMessagesAsSeen: async (userId) => {
     if (!userId) return;
     try {
+      const socket = useAuthStore.getState().socket;
+      if (socket && socket.connected) {
+        socket.emit("markMessagesAsSeen", { senderId: userId });
+      }
+
       await axiosInstance.post("/messages/seen", { userId });
       set((state) => ({
         messages: state.messages.map((msg) => {
           const senderId = (msg.senderId?._id || msg.senderId)?.toString();
-          return senderId === userId.toString() ? { ...msg, seen: true } : msg;
+          return senderId === userId.toString() ? { ...msg, seen: true, delivered: true } : msg;
         }),
         users: state.users.map((u) =>
           u._id?.toString() === userId.toString() ? { ...u, unreadCount: 0 } : u
@@ -549,6 +588,9 @@ export const useChatStore = create((set, get) => ({
     // Clean up first to avoid duplicate listeners
     socket.off("connect");
     socket.off("newMessage");
+    socket.off("messageUpdated");
+    socket.off("messageDelivered");
+    socket.off("messagesDelivered");
     socket.off("deleteMessage");
     socket.off("editMessage");
     socket.off("messagesSeen");
@@ -564,6 +606,15 @@ export const useChatStore = create((set, get) => ({
         syncLatestMessages(selectedUser._id);
       }
       processPendingMessagesQueue();
+    });
+
+    // Real-time listener for non-blocking asynchronous link preview updates
+    socket.on("messageUpdated", ({ _id, linkPreview }) => {
+      set((state) => ({
+        messages: state.messages.map((m) =>
+          m._id === _id ? { ...m, linkPreview } : m
+        ),
+      }));
     });
 
     socket.on("chatSettingUpdated", ({ otherUserId, disappearingTimer }) => {
@@ -596,9 +647,15 @@ export const useChatStore = create((set, get) => ({
         selectedUserId && authUserId && senderId === authUserId && receiverId === selectedUserId
       );
 
-      // Only play notification sound if message is from another user
+      // Only play notification sound and ack delivery if message is from another user
       if (senderId !== authUserId) {
         playNotificationSound();
+        if (socket && socket.connected) {
+          socket.emit("ackDelivery", {
+            messageId: newMessage._id,
+            senderId: senderId,
+          });
+        }
       }
 
       if (isFromSelectedUser || isSentByMeToSelectedUser) {
@@ -696,11 +753,41 @@ export const useChatStore = create((set, get) => ({
       }));
     });
 
+    // Real-time WhatsApp Delivery Receipt: single check flips to double grey check
+    socket.on("messageDelivered", ({ messageId }) => {
+      set((state) => ({
+        messages: state.messages.map((m) =>
+          m._id?.toString() === messageId?.toString()
+            ? { ...m, delivered: true }
+            : m
+        ),
+      }));
+    });
+
+    // Real-time WhatsApp Catch-up Delivery: all pending offline messages flip to double grey check
+    socket.on("messagesDelivered", ({ receiverId, messageIds }) => {
+      const idSet = new Set((messageIds || []).map((id) => id.toString()));
+      set((state) => ({
+        messages: state.messages.map((m) => {
+          const mReceiverId = (m.receiverId?._id || m.receiverId)?.toString();
+          if (
+            idSet.has(m._id?.toString()) ||
+            (receiverId && mReceiverId === receiverId.toString())
+          ) {
+            return { ...m, delivered: true };
+          }
+          return m;
+        }),
+      }));
+    });
+
     socket.on("messagesSeen", ({ by }) => {
       set((state) => ({
         messages: state.messages.map((msg) => {
           const receiverId = (msg.receiverId?._id || msg.receiverId)?.toString();
-          return receiverId === by?.toString() ? { ...msg, seen: true } : msg;
+          return receiverId === by?.toString()
+            ? { ...msg, seen: true, delivered: true }
+            : msg;
         }),
       }));
     });
@@ -798,6 +885,9 @@ export const useChatStore = create((set, get) => ({
     if (!socket) return;
     socket.off("connect");
     socket.off("newMessage");
+    socket.off("messageUpdated");
+    socket.off("messageDelivered");
+    socket.off("messagesDelivered");
     socket.off("deleteMessage");
     socket.off("editMessage");
     socket.off("messageReaction");

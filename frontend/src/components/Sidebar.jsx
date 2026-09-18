@@ -312,7 +312,7 @@ const Sidebar = () => {
                         : "text-base-content/60"
                     }`}
                   >
-                    {user.lastMessage?.senderId === authUser?._id && (
+                    {(user.lastMessage?.senderId?._id || user.lastMessage?.senderId)?.toString() === authUser?._id?.toString() && (
                       <CheckCheck className="size-3.5 text-base-content/50 inline mr-0.5 flex-shrink-0" />
                     )}
                     {user.lastMessage ? (

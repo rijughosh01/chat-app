@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import ChatSetting from "../models/chatSetting.model.js";
@@ -121,6 +122,9 @@ export const getUsersForSidebar = async (req, res) => {
 export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userToChatId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
     const { cursor, limit = 30 } = req.query;
     const myId = req.user._id;
 
@@ -174,6 +178,29 @@ export const getMessages = async (req, res) => {
         ? chronologicalMessages[0].createdAt
         : null;
 
+    // WhatsApp Live Seen: Mark all unread messages from this contact as seen and broadcast
+    const unreadCount = await Message.countDocuments({
+      senderId: userToChatId,
+      receiverId: myId,
+      seen: false,
+    });
+    if (unreadCount > 0) {
+      await Message.updateMany(
+        { senderId: userToChatId, receiverId: myId, seen: false },
+        { $set: { seen: true, delivered: true } }
+      );
+      io.to(userToChatId.toString()).emit("messagesSeen", { by: myId });
+
+      // Update in-memory returned list so recipient gets fresh seen status immediately
+      chronologicalMessages.forEach((m) => {
+        const sId = (m.senderId?._id || m.senderId)?.toString();
+        if (sId === userToChatId.toString() && !m.seen) {
+          m.seen = true;
+          m.delivered = true;
+        }
+      });
+    }
+
     res.status(200).json({
       messages: chronologicalMessages,
       hasMore,
@@ -186,148 +213,220 @@ export const getMessages = async (req, res) => {
   }
 };
 
+// Core message creation and dispatch service used by both HTTP controller and WebSocket fast-path
+export const createMessageCore = async ({
+  senderId,
+  receiverId,
+  text,
+  image,
+  audio,
+  audioDuration,
+  sticker,
+  replyTo,
+  user,
+}) => {
+  if (!receiverId || !mongoose.Types.ObjectId.isValid(receiverId)) {
+    throw new Error("Valid receiver ID required");
+  }
+
+  let imageUrl;
+  if (image) {
+    const uploadResponse = await cloudinary.uploader.upload(image);
+    imageUrl = uploadResponse.secure_url;
+  }
+
+  let stickerUrl = sticker;
+  if (sticker && sticker.startsWith("data:")) {
+    const uploadResponse = await cloudinary.uploader.upload(sticker, {
+      folder: "chat_stickers",
+      resource_type: "auto",
+    });
+    stickerUrl = uploadResponse.secure_url;
+  }
+
+  let audioUrl;
+  if (audio) {
+    try {
+      const base64Data = audio.includes(";base64,")
+        ? audio.split(";base64,").pop()
+        : audio;
+      const buffer = Buffer.from(base64Data, "base64");
+
+      const uploadResponse = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "video",
+            folder: "chat_audio",
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        uploadStream.end(buffer);
+      });
+
+      audioUrl = uploadResponse.secure_url;
+    } catch (uploadError) {
+      console.error("Cloudinary audio buffer upload error, trying fallback:", uploadError);
+      const sanitizedAudio = audio.replace(/;codecs=[^;]+/, "");
+      const fallbackResponse = await cloudinary.uploader.upload(sanitizedAudio, {
+        resource_type: "video",
+        folder: "chat_audio",
+      });
+      audioUrl = fallbackResponse.secure_url;
+    }
+  }
+
+  // Check if disappearing messages are active for this chat
+  const chatSetting = await ChatSetting.findOne({
+    participants: { $all: [senderId, receiverId] },
+  });
+  let expireAt = null;
+  if (chatSetting && chatSetting.disappearingTimer > 0) {
+    expireAt = new Date(Date.now() + chatSetting.disappearingTimer * 1000);
+  }
+
+  const delivered = isUserOnline(receiverId);
+
+  const newMessage = new Message({
+    senderId,
+    receiverId,
+    text,
+    image: imageUrl,
+    audio: audioUrl,
+    audioDuration: audioDuration || 0,
+    sticker: stickerUrl,
+    linkPreview: null, // Populated asynchronously below to avoid holding up delivery
+    expireAt,
+    delivered,
+    seen: false,
+    replyTo: replyTo || null,
+  });
+
+  await newMessage.save();
+
+  if (newMessage.replyTo) {
+    await newMessage.populate({
+      path: "replyTo",
+      select: "text image audio sticker senderId",
+      populate: { path: "senderId", select: "fullName" },
+    });
+  }
+
+  // Broadcast to the receiver's room (reaches all active sockets/devices/tabs of receiver)
+  io.to(receiverId.toString()).emit("newMessage", newMessage);
+  // Also emit to the sender's room so any other open tabs/devices stay synchronized
+  io.to(senderId.toString()).emit("newMessage", newMessage);
+
+  // Instant non-blocking link preview: fetch in background and push update via socket
+  if (text) {
+    const extractedUrl = extractUrl(text);
+    if (extractedUrl) {
+      fetchLinkPreview(extractedUrl)
+        .then(async (preview) => {
+          if (preview) {
+            const updated = await Message.findByIdAndUpdate(
+              newMessage._id,
+              { linkPreview: preview },
+              { new: true }
+            );
+            if (updated) {
+              io.to(receiverId.toString()).emit("messageUpdated", {
+                _id: newMessage._id,
+                linkPreview: preview,
+              });
+              io.to(senderId.toString()).emit("messageUpdated", {
+                _id: newMessage._id,
+                linkPreview: preview,
+              });
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Non-blocking link preview error:", err.message);
+        });
+    }
+  }
+
+  // Trigger Web Push notification asynchronously (for backgrounded tabs, locked screen, or offline users)
+  let previewText = "Sent a message";
+  if (text) {
+    previewText = text.length > 120 ? text.substring(0, 117) + "..." : text;
+  } else if (imageUrl) {
+    previewText = "📷 Sent an image";
+  } else if (audioUrl) {
+    previewText = "🎙️ Sent a voice message";
+  } else if (stickerUrl) {
+    previewText = "🏷️ Sent a sticker";
+  }
+
+  const senderName = user?.fullName || "NexChat";
+  const senderPic = user?.profilePic || "/avatar.png";
+
+  sendPushNotification(receiverId, {
+    title: senderName,
+    body: previewText,
+    icon: senderPic,
+    badge: "/vite.svg",
+    tag: `chat-${senderId}`,
+    data: {
+      url: `/?chatWith=${senderId}`,
+      senderId: senderId.toString(),
+      senderName: senderName,
+      messageId: newMessage._id.toString(),
+    },
+  }).catch((pushErr) => {
+    console.error("Error dispatching push notification:", pushErr.message);
+  });
+
+  return newMessage;
+};
+
 export const sendMessage = async (req, res) => {
   try {
     const { text, image, audio, audioDuration, sticker, replyTo } = req.body;
     const { id: receiverId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(receiverId)) {
+      return res.status(400).json({ error: "Invalid receiver ID" });
+    }
     const senderId = req.user._id;
 
-    let imageUrl;
-    if (image) {
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
-    }
-
-    let stickerUrl = sticker;
-    if (sticker && sticker.startsWith("data:")) {
-      const uploadResponse = await cloudinary.uploader.upload(sticker, {
-        folder: "chat_stickers",
-        resource_type: "auto",
-      });
-      stickerUrl = uploadResponse.secure_url;
-    }
-
-    let audioUrl;
-    if (audio) {
-      try {
-        const base64Data = audio.includes(";base64,")
-          ? audio.split(";base64,").pop()
-          : audio;
-        const buffer = Buffer.from(base64Data, "base64");
-
-        const uploadResponse = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              resource_type: "video",
-              folder: "chat_audio",
-            },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result);
-            }
-          );
-          uploadStream.end(buffer);
-        });
-
-        audioUrl = uploadResponse.secure_url;
-      } catch (uploadError) {
-        console.error("Cloudinary audio buffer upload error, trying fallback:", uploadError);
-        const sanitizedAudio = audio.replace(/;codecs=[^;]+/, "");
-        const fallbackResponse = await cloudinary.uploader.upload(sanitizedAudio, {
-          resource_type: "video",
-          folder: "chat_audio",
-        });
-        audioUrl = fallbackResponse.secure_url;
-      }
-    }
-
-    let linkPreview = null;
-    if (text) {
-      const extractedUrl = extractUrl(text);
-      if (extractedUrl) {
-        linkPreview = await fetchLinkPreview(extractedUrl);
-      }
-    }
-
-    // Check if disappearing messages are active for this chat
-    const chatSetting = await ChatSetting.findOne({
-      participants: { $all: [senderId, receiverId] },
-    });
-    let expireAt = null;
-    if (chatSetting && chatSetting.disappearingTimer > 0) {
-      expireAt = new Date(Date.now() + chatSetting.disappearingTimer * 1000);
-    }
-
-    const delivered = isUserOnline(receiverId);
-
-    const newMessage = new Message({
+    const newMessage = await createMessageCore({
       senderId,
       receiverId,
       text,
-      image: imageUrl,
-      audio: audioUrl,
-      audioDuration: audioDuration || 0,
-      sticker: stickerUrl,
-      linkPreview,
-      expireAt,
-      delivered, 
-      seen: false, 
-      replyTo: replyTo || null,
-    });
-
-    await newMessage.save();
-
-    if (newMessage.replyTo) {
-      await newMessage.populate({
-        path: "replyTo",
-        select: "text image audio sticker senderId",
-        populate: { path: "senderId", select: "fullName" },
-      });
-    }
-
-    // Broadcast to the receiver's room (reaches all active sockets/devices/tabs of receiver)
-    io.to(receiverId.toString()).emit("newMessage", newMessage);
-    // Also emit to the sender's room so any other open tabs/devices stay synchronized
-    io.to(senderId.toString()).emit("newMessage", newMessage);
-
-    // Trigger Web Push notification asynchronously (for backgrounded tabs, locked screen, or offline users)
-    let previewText = "Sent a message";
-    if (text) {
-      previewText = text.length > 120 ? text.substring(0, 117) + "..." : text;
-    } else if (imageUrl) {
-      previewText = "📷 Sent an image";
-    } else if (audioUrl) {
-      previewText = "🎙️ Sent a voice message";
-    } else if (stickerUrl) {
-      previewText = "🏷️ Sent a sticker";
-    }
-
-    sendPushNotification(receiverId, {
-      title: req.user.fullName || "NexChat",
-      body: previewText,
-      icon: req.user.profilePic || "/avatar.png",
-      badge: "/vite.svg",
-      tag: `chat-${senderId}`,
-      data: {
-        url: `/?chatWith=${senderId}`,
-        senderId: senderId.toString(),
-        senderName: req.user.fullName,
-        messageId: newMessage._id.toString(),
-      },
-    }).catch((pushErr) => {
-      console.error("Error dispatching push notification:", pushErr.message);
+      image,
+      audio,
+      audioDuration,
+      sticker,
+      replyTo,
+      user: req.user,
     });
 
     res.status(201).json(newMessage);
   } catch (error) {
     console.log("Error in sendMessage controller: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: error.message || "Internal server error" });
   }
 };
+
+// Helper to extract full Cloudinary public ID including folders
+function extractCloudinaryPublicId(url) {
+  if (!url || typeof url !== "string") return null;
+  const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z0-9]+)?$/);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return url.split("/").pop()?.split(".")[0] || null;
+}
 
 export const deleteMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({ error: "Invalid message ID" });
+    }
     const userId = req.user._id;
 
     const message = await Message.findById(messageId);
@@ -343,9 +442,27 @@ export const deleteMessage = async (req, res) => {
         .status(403)
         .json({ error: "Unauthorized to delete this message" });
     }
+
     if (message.image) {
-      const publicId = message.image.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(publicId);
+      const publicId = extractCloudinaryPublicId(message.image);
+      if (publicId) {
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (e) {
+          console.error("Failed to destroy Cloudinary image:", e.message);
+        }
+      }
+    }
+
+    if (message.audio) {
+      const audioPublicId = extractCloudinaryPublicId(message.audio);
+      if (audioPublicId) {
+        try {
+          await cloudinary.uploader.destroy(audioPublicId, { resource_type: "video" });
+        } catch (e) {
+          console.error("Failed to destroy Cloudinary audio:", e.message);
+        }
+      }
     }
 
     await Message.findByIdAndDelete(messageId);
@@ -368,6 +485,9 @@ export const deleteMessage = async (req, res) => {
 export const editMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({ error: "Invalid message ID" });
+    }
     const userId = req.user._id;
     const { text, image } = req.body;
 
@@ -385,8 +505,14 @@ export const editMessage = async (req, res) => {
     let imageUrl = message.image;
     if (image && image !== message.image) {
       if (message.image) {
-        const publicId = message.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(publicId);
+        const publicId = extractCloudinaryPublicId(message.image);
+        if (publicId) {
+          try {
+            await cloudinary.uploader.destroy(publicId);
+          } catch (e) {
+            console.error("Failed to destroy old Cloudinary image:", e.message);
+          }
+        }
       }
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
@@ -414,10 +540,13 @@ export const editMessage = async (req, res) => {
 export const markMessagesAsSeen = async (req, res) => {
   try {
     const { userId } = req.body; 
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
     const myId = req.user._id;
     await Message.updateMany(
       { senderId: userId, receiverId: myId, seen: false },
-      { $set: { seen: true } }
+      { $set: { seen: true, delivered: true } }
     );
     io.to(userId.toString()).emit("messagesSeen", { by: myId });
 
@@ -430,6 +559,9 @@ export const markMessagesAsSeen = async (req, res) => {
 export const reactToMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({ error: "Invalid message ID" });
+    }
     const { emoji } = req.body;
     const userId = req.user._id;
 
@@ -515,6 +647,9 @@ export const getLinkPreview = async (req, res) => {
 export const updateChatSetting = async (req, res) => {
   try {
     const { id: otherUserId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(otherUserId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
     const myId = req.user._id;
     const { disappearingTimer = 0 } = req.body;
 

@@ -31,7 +31,7 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
-      generateToken(newUser._id, res);
+      const token = generateToken(newUser._id, res);
       await newUser.save();
 
       res.status(201).json({
@@ -43,6 +43,7 @@ export const signup = async (req, res) => {
         showOnlineStatus: newUser.showOnlineStatus !== false,
         lastSeen: newUser.lastSeen,
         createdAt: newUser.createdAt,
+        token,
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -67,7 +68,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(user._id, res);
+    const token = generateToken(user._id, res);
 
     user.lastSeen = new Date();
     await user.save();
@@ -81,6 +82,7 @@ export const login = async (req, res) => {
       showOnlineStatus: user.showOnlineStatus !== false,
       lastSeen: user.lastSeen,
       createdAt: user.createdAt,
+      token,
     });
   } catch (error) {
     console.log("Error in login controller", error.message);
@@ -90,13 +92,27 @@ export const login = async (req, res) => {
 
 export const logout = (req, res) => {
   try {
-    res.cookie("jwt", "", { maxAge: 0 });
+    res.cookie("jwt", "", {
+      maxAge: 0,
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "none",
+      secure: process.env.NODE_ENV !== "development",
+    });
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.log("Error in logout controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+function extractCloudinaryPublicId(url) {
+  if (!url || typeof url !== "string") return null;
+  const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z0-9]+)?$/);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return url.split("/").pop()?.split(".")[0] || null;
+}
 
 export const updateProfile = async (req, res) => {
   try {
@@ -106,6 +122,16 @@ export const updateProfile = async (req, res) => {
     const updateFields = {};
     if (profilePic) {
       if (profilePic.startsWith("data:")) {
+        if (req.user.profilePic && !req.user.profilePic.startsWith("/avatar")) {
+          const oldPublicId = extractCloudinaryPublicId(req.user.profilePic);
+          if (oldPublicId) {
+            try {
+              await cloudinary.uploader.destroy(oldPublicId);
+            } catch (e) {
+              console.error("Failed to destroy old Cloudinary avatar:", e.message);
+            }
+          }
+        }
         const uploadResponse = await cloudinary.uploader.upload(profilePic);
         updateFields.profilePic = uploadResponse.secure_url;
       } else {
@@ -145,7 +171,13 @@ export const updateProfile = async (req, res) => {
 
 export const checkAuth = (req, res) => {
   try {
-    res.status(200).json(req.user);
+    const token =
+      req.cookies?.jwt ||
+      (req.headers?.authorization && req.headers.authorization.startsWith("Bearer ")
+        ? req.headers.authorization.split(" ")[1]
+        : null);
+    const userData = req.user.toObject ? req.user.toObject() : req.user;
+    res.status(200).json({ ...userData, token });
   } catch (error) {
     console.log("Error in checkAuth controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
