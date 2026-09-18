@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
-import { MessagesSquare, Users, Palette, User } from "lucide-react";
+import { useStatusStore } from "../store/useStatusStore";
+import { MessagesSquare, CircleDashed, Users, Palette } from "lucide-react";
 
 const MobileBottomNav = () => {
   const { authUser, onlineUsers } = useAuthStore();
   const { selectedUser, setSelectedUser, users } = useChatStore();
+  const { otherUserStatuses } = useStatusStore();
   const location = useLocation();
 
   if (!authUser) return null;
@@ -14,11 +16,25 @@ const MobileBottomNav = () => {
   const isInsideChat = location.pathname === "/" && Boolean(selectedUser);
 
   const totalUnread = users.reduce((acc, u) => acc + (u.unreadCount || 0), 0);
+  const unviewedStatusCount = otherUserStatuses.filter((s) => s.hasUnviewed).length;
   const onlineCount = users.filter(
     (u) => u.showOnlineStatus !== false && onlineUsers.includes(u._id)
   ).length;
 
   const currentPath = location.pathname;
+  const isChatsActive =
+    currentPath === "/" &&
+    !selectedUser &&
+    !location.search.includes("filter=online") &&
+    !location.search.includes("tab=status");
+  const isStatusActive =
+    currentPath === "/" &&
+    !selectedUser &&
+    location.search.includes("tab=status");
+  const isOnlineActive =
+    currentPath === "/" &&
+    !selectedUser &&
+    location.search.includes("filter=online");
 
   return (
     <nav
@@ -38,13 +54,13 @@ const MobileBottomNav = () => {
           onClick={() => setSelectedUser(null)}
           className={`
             flex flex-col items-center justify-center flex-1 py-1 rounded-2xl relative transition-all active:scale-95 cursor-pointer
-            ${currentPath === "/" && !selectedUser && !location.search.includes("filter=online") ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-base-content/60 hover:text-base-content font-medium"}
+            ${isChatsActive ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-base-content/60 hover:text-base-content font-medium"}
           `}
         >
           <div className="relative">
             <div
               className={`p-1 rounded-xl transition-all ${
-                currentPath === "/" && !selectedUser && !location.search.includes("filter=online") ? "bg-emerald-500/15" : ""
+                isChatsActive ? "bg-emerald-500/15" : ""
               }`}
             >
               <MessagesSquare className="size-5" />
@@ -58,19 +74,43 @@ const MobileBottomNav = () => {
           <span className="text-[10px] tracking-tight mt-0.5">Chats</span>
         </Link>
 
+        {/* Status Tab */}
+        <Link
+          to="/?tab=status"
+          onClick={() => setSelectedUser(null)}
+          className={`
+            flex flex-col items-center justify-center flex-1 py-1 rounded-2xl relative transition-all active:scale-95 cursor-pointer
+            ${isStatusActive ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-base-content/60 hover:text-base-content font-medium"}
+          `}
+        >
+          <div className="relative">
+            <div
+              className={`p-1 rounded-xl transition-all ${
+                isStatusActive ? "bg-emerald-500/15" : ""
+              }`}
+            >
+              <CircleDashed className="size-5" />
+            </div>
+            {unviewedStatusCount > 0 && (
+              <span className="absolute -top-0.5 -right-1 size-2.5 rounded-full bg-emerald-500 ring-2 ring-base-100" />
+            )}
+          </div>
+          <span className="text-[10px] tracking-tight mt-0.5">Status</span>
+        </Link>
+
         {/* Online Contacts Tab */}
         <Link
           to="/?filter=online"
           onClick={() => setSelectedUser(null)}
           className={`
             flex flex-col items-center justify-center flex-1 py-1 rounded-2xl relative transition-all active:scale-95 cursor-pointer
-            ${location.search.includes("filter=online") ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-base-content/60 hover:text-base-content font-medium"}
+            ${isOnlineActive ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-base-content/60 hover:text-base-content font-medium"}
           `}
         >
           <div className="relative">
             <div
               className={`p-1 rounded-xl transition-all ${
-                location.search.includes("filter=online") ? "bg-emerald-500/15" : ""
+                isOnlineActive ? "bg-emerald-500/15" : ""
               }`}
             >
               <Users className="size-5" />

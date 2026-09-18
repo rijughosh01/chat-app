@@ -2,11 +2,15 @@ import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { useStatusStore } from "../store/useStatusStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 
 import Sidebar from "../components/Sidebar";
 import NoChatSelected from "../components/NoChatSelected";
 import ChatContainer from "../components/ChatContainer";
+import StatusViewerModal from "../components/status/StatusViewerModal";
+import CreateTextStatusModal from "../components/status/CreateTextStatusModal";
+import CreateMediaStatusModal from "../components/status/CreateMediaStatusModal";
 import { Bell, X, Loader2, Sparkles } from "lucide-react";
 
 const HomePage = () => {
@@ -19,6 +23,8 @@ const HomePage = () => {
     unsubscribeFromMessages,
   } = useChatStore();
   const { socket } = useAuthStore();
+  const { getStatuses, subscribeToStatusEvents, unsubscribeFromStatusEvents } =
+    useStatusStore();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const {
@@ -31,11 +37,25 @@ const HomePage = () => {
   } = useNotificationStore();
 
   useEffect(() => {
+    getStatuses();
+  }, [getStatuses]);
+
+  useEffect(() => {
     if (socket) {
       subscribeToMessages();
+      subscribeToStatusEvents();
     }
-    return () => unsubscribeFromMessages();
-  }, [socket, subscribeToMessages, unsubscribeFromMessages]);
+    return () => {
+      unsubscribeFromMessages();
+      unsubscribeFromStatusEvents();
+    };
+  }, [
+    socket,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+    subscribeToStatusEvents,
+    unsubscribeFromStatusEvents,
+  ]);
 
   // Handle deep link or notification click targeting a specific user: ?chatWith=<userId>
   useEffect(() => {
@@ -121,6 +141,11 @@ const HomePage = () => {
           </div>
         </div>
       </main>
+
+      {/* WhatsApp Stories & Status Modals */}
+      <StatusViewerModal />
+      <CreateTextStatusModal />
+      <CreateMediaStatusModal />
     </div>
   );
 };
