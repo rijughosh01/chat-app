@@ -13,10 +13,10 @@ export const authLimiter = rateLimit({
 });
 
 // Rate limiter for sending messages
-// 1-minute window, maximum 80 messages per IP (allows offline batch synchronization)
+// 1-minute window, maximum 45 messages per IP
 export const messageLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 80,
+  max: 45,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

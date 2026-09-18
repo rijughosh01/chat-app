@@ -4,10 +4,9 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
 const BASE_URL =
-  import.meta.env.VITE_BACKEND_URL ||
-  (import.meta.env.MODE === "development"
+  import.meta.env.MODE === "development"
     ? "http://localhost:5001"
-    : "https://nexchatapp.onrender.com");
+    : "https://nexchatapp.onrender.com";
     
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -21,16 +20,11 @@ export const useAuthStore = create((set, get) => ({
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
-      if (res.data?.token && typeof window !== "undefined") {
-        localStorage.setItem("chat_auth_token", res.data.token);
-      }
+
       set({ authUser: res.data });
       get().connectSocket();
     } catch (error) {
       console.log("Error in checkAuth:", error);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("chat_auth_token");
-      }
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -41,14 +35,11 @@ export const useAuthStore = create((set, get) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post("/auth/signup", data);
-      if (res.data?.token && typeof window !== "undefined") {
-        localStorage.setItem("chat_auth_token", res.data.token);
-      }
       set({ authUser: res.data });
       toast.success("Account created successfully");
       get().connectSocket();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create account");
+      toast.error(error.response.data.message);
     } finally {
       set({ isSigningUp: false });
     }
@@ -58,15 +49,12 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
-      if (res.data?.token && typeof window !== "undefined") {
-        localStorage.setItem("chat_auth_token", res.data.token);
-      }
       set({ authUser: res.data });
       toast.success("Logged in successfully");
 
       get().connectSocket();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to log in");
+      toast.error(error.response.data.message);
     } finally {
       set({ isLoggingIn: false });
     }
@@ -75,18 +63,11 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("chat_auth_token");
-      }
       set({ authUser: null });
       toast.success("Logged out successfully");
       get().disconnectSocket();
     } catch (error) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("chat_auth_token");
-      }
-      set({ authUser: null });
-      toast.error(error.response?.data?.message || "Failed to log out");
+      toast.error(error.response.data.message);
     }
   },
 
@@ -98,7 +79,7 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Profile updated successfully");
     } catch (error) {
       console.log("error in update profile:", error);
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      toast.error(error.response.data.message);
     } finally {
       set({ isUpdatingProfile: false });
     }
@@ -121,20 +102,10 @@ export const useAuthStore = create((set, get) => ({
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-    const token =
-      authUser.token ||
-      (typeof window !== "undefined"
-        ? localStorage.getItem("chat_auth_token")
-        : null);
-
     const socket = io(BASE_URL, {
       query: {
         userId: authUser._id,
       },
-      auth: {
-        token: token,
-      },
-      withCredentials: true,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,

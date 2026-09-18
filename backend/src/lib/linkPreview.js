@@ -19,52 +19,6 @@ export function extractUrl(text) {
   return url;
 }
 
-function isPrivateOrInternalHost(hostname) {
-  if (!hostname) return true;
-  const host = hostname.toLowerCase().trim();
-
-  if (
-    host === "localhost" ||
-    host.endsWith(".local") ||
-    host.endsWith(".internal") ||
-    host.endsWith(".lan") ||
-    host.endsWith(".corp")
-  ) {
-    return true;
-  }
-
-  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4Match) {
-    const [a, b, c, d] = [
-      Number(ipv4Match[1]),
-      Number(ipv4Match[2]),
-      Number(ipv4Match[3]),
-      Number(ipv4Match[4]),
-    ];
-    if (a < 0 || a > 255 || b < 0 || b > 255 || c < 0 || c > 255 || d < 0 || d > 255) {
-      return true;
-    }
-    // 0.0.0.0/8, 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0+
-    if (a === 0 || a === 10 || a === 127) return true;
-    if (a === 169 && b === 254) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    if (a === 192 && b === 168) return true;
-    if (a >= 224) return true;
-  }
-
-  if (
-    host === "::1" ||
-    host === "::" ||
-    host.startsWith("fe80:") ||
-    host.startsWith("fc00:") ||
-    host.startsWith("fd")
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
 export async function fetchLinkPreview(targetUrl) {
   try {
     if (!targetUrl || typeof targetUrl !== "string") return null;
@@ -72,11 +26,6 @@ export async function fetchLinkPreview(targetUrl) {
 
     // Only support http and https
     if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-      return null;
-    }
-
-    // SSRF Guard: prevent probing loopback, internal networks, or cloud metadata
-    if (isPrivateOrInternalHost(parsedUrl.hostname)) {
       return null;
     }
 
@@ -96,18 +45,6 @@ export async function fetchLinkPreview(targetUrl) {
     });
 
     if (!response.ok) return null;
-
-    // Verify redirected destination doesn't point to private or internal addresses
-    if (response.url) {
-      try {
-        const finalUrl = new URL(response.url);
-        if (isPrivateOrInternalHost(finalUrl.hostname)) {
-          return null;
-        }
-      } catch {
-        return null;
-      }
-    }
 
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("text/html")) return null;

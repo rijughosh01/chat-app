@@ -3,11 +3,7 @@ import User from "../models/user.model.js";
 
 export const protectRoute = async (req, res, next) => {
   try {
-    const token =
-      req.cookies?.jwt ||
-      (req.headers?.authorization && req.headers.authorization.startsWith("Bearer ")
-        ? req.headers.authorization.split(" ")[1]
-        : null);
+    const token = req.cookies.jwt;
 
     if (!token) {
       return res

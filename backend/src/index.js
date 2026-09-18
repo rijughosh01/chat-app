@@ -24,9 +24,7 @@ app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: (origin, callback) => {
-      callback(null, true);
-    },
+    origin: ["http://localhost:5173", "https://nexchatapp-tau.vercel.app"],
     credentials: true,
   })
 );

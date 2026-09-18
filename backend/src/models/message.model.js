@@ -70,11 +70,8 @@ const messageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound indexes for ultra-fast chronological chat queries and cursor pagination
-messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
-messageSchema.index({ receiverId: 1, senderId: 1, createdAt: -1 });
-messageSchema.index({ receiverId: 1, seen: 1 });
-messageSchema.index({ receiverId: 1, delivered: 1 });
+messageSchema.index({ senderId: 1, receiverId: 1, createdAt: 1 });
+messageSchema.index({ receiverId: 1, senderId: 1, createdAt: 1 });
 messageSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 
 const Message = mongoose.model("Message", messageSchema);
