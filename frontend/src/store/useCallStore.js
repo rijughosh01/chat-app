@@ -25,6 +25,17 @@ const RTC_CONFIG = {
   ],
 };
 
+// Acoustic Echo Cancellation, Noise Suppression, and Auto-Gain Control to eliminate feedback squeal
+const AUDIO_CONSTRAINTS = {
+  echoCancellation: { ideal: true },
+  noiseSuppression: { ideal: true },
+  autoGainControl: { ideal: true },
+  googEchoCancellation: { ideal: true },
+  googAutoGainControl: { ideal: true },
+  googNoiseSuppression: { ideal: true },
+  googHighpassFilter: { ideal: true },
+};
+
 const clearCallTimeout = () => {
   if (callTimeoutTimer) {
     clearTimeout(callTimeoutTimer);
@@ -308,7 +319,7 @@ export const useCallStore = create((set, get) => ({
       if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: AUDIO_CONSTRAINTS,
             video: callType === "video" ? { facingMode: "user" } : false,
           });
         } catch (camErr) {
@@ -316,7 +327,7 @@ export const useCallStore = create((set, get) => ({
             console.warn("Webcam access failed, falling back to voice call:", camErr);
             toast("Camera unavailable, switched to voice call 🎙️", { icon: "⚠️" });
             stream = await navigator.mediaDevices.getUserMedia({
-              audio: true,
+              audio: AUDIO_CONSTRAINTS,
               video: false,
             });
             effectiveCallType = "voice";
@@ -343,7 +354,7 @@ export const useCallStore = create((set, get) => ({
       localStream: stream,
     });
 
-    startRingtone();
+    startRingtone("outgoing");
 
     // 45-second call timeout (WhatsApp style)
     clearCallTimeout();
@@ -364,7 +375,7 @@ export const useCallStore = create((set, get) => ({
   },
 
   receiveIncomingCall: ({ from, callType, callerName, callerPic }) => {
-    startRingtone();
+    startRingtone("incoming");
     clearCallTimeout();
     callTimeoutTimer = setTimeout(() => {
       const { callStatus } = get();
@@ -398,7 +409,7 @@ export const useCallStore = create((set, get) => ({
       if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: AUDIO_CONSTRAINTS,
             video: callType === "video" ? { facingMode: "user" } : false,
           });
         } catch (camErr) {
@@ -406,7 +417,7 @@ export const useCallStore = create((set, get) => ({
             console.warn("Webcam access failed on accept, switching to voice:", camErr);
             toast("Camera unavailable, connected as voice call 🎙️", { icon: "⚠️" });
             stream = await navigator.mediaDevices.getUserMedia({
-              audio: true,
+              audio: AUDIO_CONSTRAINTS,
               video: false,
             });
             effectiveCallType = "voice";

@@ -55,25 +55,46 @@ const CallModal = () => {
     }
   }, [socket, initSocketListeners]);
 
+  // Local video preview: ALWAYS strip audio tracks and hard-mute to prevent self-microphone feedback loops
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
+    if (localVideoRef.current) {
+      localVideoRef.current.muted = true;
+      localVideoRef.current.volume = 0;
+      if (localStream) {
+        const videoTracks = localStream.getVideoTracks();
+        if (videoTracks.length > 0) {
+          localVideoRef.current.srcObject = new MediaStream(videoTracks);
+        } else {
+          localVideoRef.current.srcObject = null;
+        }
+      } else {
+        localVideoRef.current.srcObject = null;
+      }
     }
   }, [localStream, callStatus, isMinimized]);
 
+  // Remote video element: hard-mute so it only renders video frames without duplicate audio echo
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.muted = true;
+      remoteVideoRef.current.volume = 0;
+      if (remoteStream) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      } else {
+        remoteVideoRef.current.srcObject = null;
+      }
     }
   }, [remoteStream, callStatus, isMinimized]);
 
   // Persistent audio playback for voice calls, video calls, and minimized mode
   useEffect(() => {
-    if (remoteAudioRef.current && remoteStream) {
+    if (callStatus === "connected" && remoteAudioRef.current && remoteStream) {
       remoteAudioRef.current.srcObject = remoteStream;
       remoteAudioRef.current
         .play?.()
         .catch((e) => console.log("Remote audio auto-playback notification:", e));
+    } else if (callStatus !== "connected" && remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = null;
     }
   }, [remoteStream, callStatus, isMinimized]);
 
