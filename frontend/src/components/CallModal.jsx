@@ -235,36 +235,48 @@ const CallModal = () => {
       {/* Hidden audio element ensuring crystal clear audio in voice calls and minimized widget */}
       <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
 
-      {isMinimized && callStatus === "connected" ? (
+      {isMinimized && (callStatus === "connected" || callStatus === "calling") ? (
         /* Minimized Floating Widget */
         <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[99999] bg-neutral-900/95 backdrop-blur-xl border border-white/15 shadow-2xl rounded-2xl p-2.5 flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-200">
-          <div className="relative size-10 rounded-xl overflow-hidden bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
-            {otherUser.profilePic ? (
-              <img
-                src={otherUser.profilePic}
-                alt={otherUser.fullName}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              otherUser.fullName?.[0]?.toUpperCase() || "U"
-            )}
-            {remoteAudioLevel > 12 && (
-              <span className="absolute inset-0 rounded-xl ring-2 ring-emerald-400 animate-ping pointer-events-none" />
-            )}
-            <span className="absolute bottom-0 right-0 size-2.5 bg-emerald-500 rounded-full ring-2 ring-neutral-900 animate-pulse" />
-          </div>
-
-          <div className="flex flex-col min-w-0 pr-1">
-            <span className="text-xs font-bold text-white truncate max-w-[120px]">
-              {otherUser.fullName}
-            </span>
-            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold font-mono">
-              <span>{formatDuration(callDuration)}</span>
-              {remoteAudioLevel > 15 && (
-                <span className="flex items-center gap-0.5 text-emerald-300">
-                  <Volume2 size={10} className="animate-pulse" />
-                </span>
+          <div
+            onClick={toggleMinimize}
+            className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity flex-1 min-w-0"
+            title="Click to expand call"
+          >
+            <div className="relative size-10 rounded-xl overflow-hidden bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+              {otherUser.profilePic ? (
+                <img
+                  src={otherUser.profilePic}
+                  alt={otherUser.fullName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                otherUser.fullName?.[0]?.toUpperCase() || "U"
               )}
+              {remoteAudioLevel > 12 && (
+                <span className="absolute inset-0 rounded-xl ring-2 ring-emerald-400 animate-ping pointer-events-none" />
+              )}
+              <span className="absolute bottom-0 right-0 size-2.5 bg-emerald-500 rounded-full ring-2 ring-neutral-900 animate-pulse" />
+            </div>
+
+            <div className="flex flex-col min-w-0 pr-1">
+              <span className="text-xs font-bold text-white truncate max-w-[120px]">
+                {otherUser.fullName}
+              </span>
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold font-mono">
+                {callStatus === "calling" ? (
+                  <span>Calling...</span>
+                ) : (
+                  <>
+                    <span>{formatDuration(callDuration)}</span>
+                    {remoteAudioLevel > 15 && (
+                      <span className="flex items-center gap-0.5 text-emerald-300">
+                        <Volume2 size={10} className="animate-pulse" />
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -376,10 +388,10 @@ const CallModal = () => {
           </header>
 
           {/* Center Stage: Video Display OR Voice Call Calling Avatar */}
-          <main className="flex-1 flex flex-col items-center justify-center w-full max-w-3xl mx-auto px-6 py-4 z-10 relative">
-            {callStatus === "connected" && callType === "video" && !isVideoOff && (localStream || remoteStream) ? (
+          <main className="flex-1 flex flex-col items-center justify-center w-full max-w-3xl mx-auto px-3 sm:px-6 py-2 sm:py-4 z-10 relative min-h-0">
+            {callStatus === "connected" && callType === "video" ? (
               /* Video Stream Mode */
-              <div className="relative w-full h-full max-h-[540px] rounded-2xl sm:rounded-3xl overflow-hidden bg-black/70 border border-white/15 flex items-center justify-center shadow-2xl">
+              <div className="relative w-full h-full max-h-[75vh] sm:max-h-[560px] rounded-2xl sm:rounded-3xl overflow-hidden bg-black/80 border border-white/15 flex items-center justify-center shadow-2xl">
                 <video
                   ref={primaryVideoRef}
                   autoPlay
@@ -388,30 +400,58 @@ const CallModal = () => {
                   className="w-full h-full object-cover rounded-2xl sm:rounded-3xl"
                 />
 
-                {/* Corner PiP Thumbnail (Secondary Feed) - Clickable to Swap */}
-                {localStream && remoteStream && (
-                  <div
-                    onClick={() => setIsPiPSwapped((prev) => !prev)}
-                    className="absolute top-4 right-4 w-28 sm:w-36 h-40 sm:h-48 rounded-2xl overflow-hidden border-2 border-white/25 shadow-2xl bg-black cursor-pointer group hover:scale-105 transition-transform"
-                    title="Click to swap camera views 🔄"
-                  >
-                    <video
-                      ref={secondaryVideoRef}
-                      autoPlay
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                      <div className="size-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <ArrowLeftRight size={14} />
-                      </div>
+                {/* Primary placeholder when remote camera is off or video stream loading */}
+                {((!isPiPSwapped && (!remoteStream || remoteStream.getVideoTracks().length === 0)) ||
+                  (isPiPSwapped && isVideoOff)) && (
+                  <div className="absolute inset-0 bg-neutral-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-3 text-white">
+                    <div className="size-24 sm:size-28 rounded-full overflow-hidden ring-4 ring-white/15 bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-3xl font-bold">
+                      {isPiPSwapped ? (
+                        authUser?.fullName?.[0]?.toUpperCase() || "Y"
+                      ) : otherUser.profilePic ? (
+                        <img src={otherUser.profilePic} alt={otherUser.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        otherUser.fullName?.[0]?.toUpperCase() || "U"
+                      )}
                     </div>
-                    <div className="absolute bottom-1.5 left-2 bg-black/60 backdrop-blur-xs px-1.5 py-0.5 rounded text-[9px] font-semibold text-white/90">
-                      {isPiPSwapped ? otherUser.fullName : "You"}
+                    <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+                      <VideoOff size={15} className="text-rose-400" />
+                      <span>{isPiPSwapped ? "Your camera is off" : `${otherUser.fullName}'s camera is off`}</span>
                     </div>
                   </div>
                 )}
+
+                {/* Corner PiP Thumbnail (Secondary Feed) - Clickable to Swap */}
+                <div
+                  onClick={() => setIsPiPSwapped((prev) => !prev)}
+                  className="absolute top-4 right-4 w-28 sm:w-36 h-40 sm:h-48 rounded-2xl overflow-hidden border-2 border-white/25 shadow-2xl bg-neutral-900 cursor-pointer group hover:scale-105 transition-transform"
+                  title="Click to swap camera views 🔄"
+                >
+                  <video
+                    ref={secondaryVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                  {/* PiP Camera Off Overlay */}
+                  {((!isPiPSwapped && isVideoOff) ||
+                    (isPiPSwapped && (!remoteStream || remoteStream.getVideoTracks().length === 0))) && (
+                    <div className="absolute inset-0 bg-neutral-900/95 flex flex-col items-center justify-center gap-1.5 text-white/80 select-none">
+                      <div className="size-10 rounded-full bg-white/10 flex items-center justify-center">
+                        <VideoOff size={16} className="text-rose-400" />
+                      </div>
+                      <span className="text-[10px] font-semibold text-white/70">Camera off</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white pointer-events-none">
+                    <div className="size-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <ArrowLeftRight size={14} />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-1.5 left-2 bg-black/60 backdrop-blur-xs px-1.5 py-0.5 rounded text-[9px] font-semibold text-white/90">
+                    {isPiPSwapped ? otherUser.fullName : "You"}
+                  </div>
+                </div>
 
                 {/* Speaker Status Pill on Video */}
                 <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold text-white flex items-center gap-2 border border-white/10 shadow-lg">
@@ -534,7 +574,7 @@ const CallModal = () => {
           </main>
 
           {/* Bottom Action Controls Toolbar */}
-          <footer className="w-full max-w-xl mx-auto px-6 pb-10 sm:pb-14 pt-4 z-20 flex items-center justify-center">
+          <footer className="w-full max-w-xl mx-auto px-3 sm:px-6 pb-8 sm:pb-12 pt-3 z-20 flex items-center justify-center">
             {callStatus === "incoming" ? (
               /* Incoming Call Controls: Decline & Accept */
               <div className="flex items-center gap-16 sm:gap-24">
@@ -559,7 +599,7 @@ const CallModal = () => {
                   className="flex flex-col items-center group cursor-pointer"
                 >
                   <div className="size-16 sm:size-18 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-xl shadow-emerald-950/60 ring-4 ring-emerald-400/35 group-hover:scale-105 active:scale-95 transition-all animate-accept-glow ring-offset-2 ring-offset-[#0b141a]">
-                    <Phone size={26} />
+                    {callType === "video" ? <Video size={26} /> : <Phone size={26} />}
                   </div>
                   <span className="text-xs font-semibold text-emerald-400 tracking-wide mt-2.5">
                     Accept
@@ -589,20 +629,43 @@ const CallModal = () => {
                   </span>
                 </button>
 
-                {/* Flip Camera (for video call) */}
+                {/* Video controls on Calling (outgoing) */}
                 {callType === "video" && (
-                  <button
-                    type="button"
-                    onClick={flipCamera}
-                    className="flex flex-col items-center group cursor-pointer"
-                  >
-                    <div className="size-14 sm:size-16 rounded-full bg-white/10 hover:bg-white/15 text-white flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border border-white/10 backdrop-blur-md">
-                      <RefreshCw size={20} />
-                    </div>
-                    <span className="text-xs font-semibold text-white/70 tracking-wide mt-2.5">
-                      Flip
-                    </span>
-                  </button>
+                  <>
+                    {/* Camera Toggle */}
+                    <button
+                      type="button"
+                      onClick={toggleVideo}
+                      className="flex flex-col items-center group cursor-pointer"
+                    >
+                      <div
+                        className={`size-14 sm:size-16 rounded-full flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border backdrop-blur-md ${
+                          isVideoOff
+                            ? "bg-rose-500 text-white border-rose-500/50 shadow-lg shadow-rose-950/50 ring-4 ring-rose-500/20"
+                            : "bg-white/10 hover:bg-white/15 text-white border-white/10"
+                        }`}
+                      >
+                        {isVideoOff ? <VideoOff size={22} /> : <Video size={22} />}
+                      </div>
+                      <span className="text-xs font-semibold text-white/70 tracking-wide mt-2.5">
+                        Camera
+                      </span>
+                    </button>
+
+                    {/* Flip Camera */}
+                    <button
+                      type="button"
+                      onClick={flipCamera}
+                      className="flex flex-col items-center group cursor-pointer"
+                    >
+                      <div className="size-14 sm:size-16 rounded-full bg-white/10 hover:bg-white/15 text-white flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border border-white/10 backdrop-blur-md">
+                        <RefreshCw size={22} />
+                      </div>
+                      <span className="text-xs font-semibold text-white/70 tracking-wide mt-2.5">
+                        Flip
+                      </span>
+                    </button>
+                  </>
                 )}
 
                 {/* End Call Button */}
@@ -657,8 +720,8 @@ const CallModal = () => {
                 </button>
               </div>
             ) : (
-              /* Connected Video Call Controls */
-              <div className="flex items-center justify-center gap-4 sm:gap-8 flex-wrap">
+              /* Connected Video Call Controls - Unified with exact matching button sizing and icons */
+              <div className="flex items-center justify-center gap-3 sm:gap-6 md:gap-8">
                 {/* Mic Mute / Unmute */}
                 <button
                   type="button"
@@ -666,15 +729,15 @@ const CallModal = () => {
                   className="flex flex-col items-center group cursor-pointer"
                 >
                   <div
-                    className={`size-13 sm:size-15 rounded-full flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border backdrop-blur-md ${
+                    className={`size-14 sm:size-16 rounded-full flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border backdrop-blur-md ${
                       isMuted
                         ? "bg-rose-500 text-white border-rose-500/50 shadow-lg shadow-rose-950/50 ring-4 ring-rose-500/20"
                         : "bg-white/10 hover:bg-white/15 text-white border-white/10"
                     }`}
                   >
-                    {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+                    {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
                   </div>
-                  <span className="text-xs font-semibold text-white/70 tracking-wide mt-2">
+                  <span className="text-xs font-semibold text-white/70 tracking-wide mt-2.5">
                     {isMuted ? "Unmute" : "Mute"}
                   </span>
                 </button>
@@ -686,15 +749,15 @@ const CallModal = () => {
                   className="flex flex-col items-center group cursor-pointer"
                 >
                   <div
-                    className={`size-13 sm:size-15 rounded-full flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border backdrop-blur-md ${
+                    className={`size-14 sm:size-16 rounded-full flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border backdrop-blur-md ${
                       isVideoOff
                         ? "bg-rose-500 text-white border-rose-500/50 shadow-lg shadow-rose-950/50 ring-4 ring-rose-500/20"
                         : "bg-white/10 hover:bg-white/15 text-white border-white/10"
                     }`}
                   >
-                    {isVideoOff ? <VideoOff size={20} /> : <Video size={20} />}
+                    {isVideoOff ? <VideoOff size={22} /> : <Video size={22} />}
                   </div>
-                  <span className="text-xs font-semibold text-white/70 tracking-wide mt-2">
+                  <span className="text-xs font-semibold text-white/70 tracking-wide mt-2.5">
                     Camera
                   </span>
                 </button>
@@ -705,30 +768,30 @@ const CallModal = () => {
                   onClick={flipCamera}
                   className="flex flex-col items-center group cursor-pointer"
                 >
-                  <div className="size-13 sm:size-15 rounded-full bg-white/10 hover:bg-white/15 text-white flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border border-white/10 backdrop-blur-md">
-                    <RefreshCw size={19} />
+                  <div className="size-14 sm:size-16 rounded-full bg-white/10 hover:bg-white/15 text-white flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border border-white/10 backdrop-blur-md">
+                    <RefreshCw size={22} />
                   </div>
-                  <span className="text-xs font-semibold text-white/70 tracking-wide mt-2">
+                  <span className="text-xs font-semibold text-white/70 tracking-wide mt-2.5">
                     Flip
                   </span>
                 </button>
 
-                {/* Screen Share (Hidden on small mobile screens) */}
+                {/* Screen Share (Hidden on small mobile screens, shown on md+) */}
                 <button
                   type="button"
                   onClick={toggleScreenShare}
-                  className="hidden sm:flex flex-col items-center group cursor-pointer"
+                  className="hidden md:flex flex-col items-center group cursor-pointer"
                 >
                   <div
-                    className={`size-13 sm:size-15 rounded-full flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border backdrop-blur-md ${
+                    className={`size-14 sm:size-16 rounded-full flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 border backdrop-blur-md ${
                       isScreenSharing
                         ? "bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-950/50 ring-4 ring-emerald-400/20"
                         : "bg-white/10 hover:bg-white/15 text-white border-white/10"
                     }`}
                   >
-                    <Monitor size={20} />
+                    <Monitor size={22} />
                   </div>
-                  <span className="text-xs font-semibold text-white/70 tracking-wide mt-2">
+                  <span className="text-xs font-semibold text-white/70 tracking-wide mt-2.5">
                     Share
                   </span>
                 </button>
@@ -739,10 +802,10 @@ const CallModal = () => {
                   onClick={endCall}
                   className="flex flex-col items-center group cursor-pointer"
                 >
-                  <div className="size-15 sm:size-17 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-xl shadow-rose-950/60 ring-4 ring-rose-500/25 group-hover:scale-105 active:scale-95 transition-all">
-                    <PhoneOff size={24} />
+                  <div className="size-16 sm:size-18 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-xl shadow-rose-950/60 ring-4 ring-rose-500/25 group-hover:scale-105 active:scale-95 transition-all">
+                    <PhoneOff size={26} />
                   </div>
-                  <span className="text-xs font-semibold text-rose-400 tracking-wide mt-2">
+                  <span className="text-xs font-semibold text-rose-400 tracking-wide mt-2.5">
                     End Call
                   </span>
                 </button>

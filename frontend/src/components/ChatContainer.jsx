@@ -352,8 +352,8 @@ const ChatContainer = () => {
 
   // Double-tap to React (❤️) / Single-tap to toggle Floating Action Menu
   const handleBubbleClick = (e, message) => {
-    // If user was swiping, don't trigger click action
-    if (swipeOffset > 8) return;
+    // If user was swiping or clicked a call log, don't trigger click action
+    if (swipeOffset > 8 || message.callLog) return;
 
     const now = Date.now();
     const isDoubleTap =
@@ -588,77 +588,83 @@ const ChatContainer = () => {
                       }
                     `}
                   >
-                    {/* Reply action */}
-                    <button
-                      type="button"
-                      className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
-                      onClick={() => setReplyingMessage(message)}
-                      title="Reply"
-                    >
-                      <Reply size={13} />
-                    </button>
-
-                    {/* Reaction trigger */}
-                    <button
-                      type="button"
-                      className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
-                      onClick={() =>
-                        setReactionPickerMsgId(
-                          reactionPickerMsgId === message._id ? null : message._id
-                        )
-                      }
-                      title="React"
-                    >
-                      <Smile size={13} />
-                    </button>
-
-                    {/* Copy text action */}
-                    {message.text && (
-                      <button
-                        type="button"
-                        className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
-                        onClick={() => handleCopyMessage(message.text)}
-                        title="Copy text"
-                      >
-                        <Copy size={13} />
-                      </button>
-                    )}
-
-                    {/* Save Sticker to My Collection */}
-                    {message.sticker && (
-                      <button
-                        type="button"
-                        className="p-1 hover:bg-base-200 rounded-full text-amber-500 hover:text-amber-600 transition-colors cursor-pointer"
-                        onClick={() => handleSaveSticker(message.sticker)}
-                        title="Save to My Stickers ⭐"
-                      >
-                        <Star size={13} fill="currentColor" />
-                      </button>
-                    )}
-
-                    {/* Sender Edit/Delete */}
-                    {isSender && !message._id?.startsWith("temp-") && (
+                    {!message.callLog && (
                       <>
+                        {/* Reply action */}
                         <button
                           type="button"
-                          className="p-1 hover:bg-base-200 rounded-full text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
-                          onClick={() => {
-                            setEditingMessageId(message._id);
-                            setEditValue(message.text || "");
-                          }}
-                          title="Edit"
+                          className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
+                          onClick={() => setReplyingMessage(message)}
+                          title="Reply"
                         >
-                          <Pencil size={13} />
+                          <Reply size={13} />
                         </button>
+
+                        {/* Reaction trigger */}
                         <button
                           type="button"
-                          className="p-1 hover:bg-base-200 rounded-full text-red-500 hover:text-red-600 transition-colors cursor-pointer"
-                          onClick={() => deleteMessage(message._id)}
-                          title="Delete"
+                          className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
+                          onClick={() =>
+                            setReactionPickerMsgId(
+                              reactionPickerMsgId === message._id ? null : message._id
+                            )
+                          }
+                          title="React"
                         >
-                          <Trash2 size={13} />
+                          <Smile size={13} />
                         </button>
+
+                        {/* Copy text action */}
+                        {message.text && (
+                          <button
+                            type="button"
+                            className="p-1 hover:bg-base-200 rounded-full text-base-content/80 hover:text-base-content transition-colors cursor-pointer"
+                            onClick={() => handleCopyMessage(message.text)}
+                            title="Copy text"
+                          >
+                            <Copy size={13} />
+                          </button>
+                        )}
+
+                        {/* Save Sticker to My Collection */}
+                        {message.sticker && (
+                          <button
+                            type="button"
+                            className="p-1 hover:bg-base-200 rounded-full text-amber-500 hover:text-amber-600 transition-colors cursor-pointer"
+                            onClick={() => handleSaveSticker(message.sticker)}
+                            title="Save to My Stickers ⭐"
+                          >
+                            <Star size={13} fill="currentColor" />
+                          </button>
+                        )}
+
+                        {/* Sender Edit */}
+                        {isSender && !message._id?.startsWith("temp-") && (
+                          <button
+                            type="button"
+                            className="p-1 hover:bg-base-200 rounded-full text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setEditingMessageId(message._id);
+                              setEditValue(message.text || "");
+                            }}
+                            title="Edit"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                        )}
                       </>
+                    )}
+
+                    {/* Sender Delete / Call Log Delete */}
+                    {isSender && !message._id?.startsWith("temp-") && (
+                      <button
+                        type="button"
+                        className="p-1 hover:bg-base-200 rounded-full text-red-500 hover:text-red-600 transition-colors cursor-pointer"
+                        onClick={() => deleteMessage(message._id)}
+                        title="Delete"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     )}
                   </div>
 
@@ -800,6 +806,8 @@ const ChatContainer = () => {
                               <PhoneMissed size={19} />
                             ) : message.callLog.callType === "video" ? (
                               <Video size={19} />
+                            ) : isSender ? (
+                              <Phone size={19} />
                             ) : (
                               <PhoneIncoming size={19} />
                             )}
@@ -813,13 +821,15 @@ const ChatContainer = () => {
                               }`}
                             >
                               {message.callLog.status === "missed"
-                                ? `Missed ${message.callLog.callType || "voice"} call`
+                                ? isSender
+                                  ? `Unanswered ${message.callLog.callType || "voice"} call`
+                                  : `Missed ${message.callLog.callType || "voice"} call`
                                 : `${message.callLog.callType === "video" ? "Video" : "Voice"} call`}
                             </span>
                             <span className="text-[10px] text-base-content/60 font-medium">
                               {message.callLog.status === "missed"
                                 ? "Tap to call back"
-                                : `${Math.floor(message.callLog.duration / 60)}m ${message.callLog.duration % 60}s · Completed`}
+                                : `${Math.floor(message.callLog.duration / 60)}m ${message.callLog.duration % 60}s · ${isSender ? "Outgoing" : "Incoming"}`}
                             </span>
                           </div>
                           <button
@@ -958,7 +968,7 @@ const ChatContainer = () => {
                               />
                             )}
 
-                            {isSender && (
+                            {isSender && !message.callLog && (
                               <span className="inline-flex items-center">
                                 {message.status === "queued" ? (
                                   <Clock

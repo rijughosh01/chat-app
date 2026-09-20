@@ -17,15 +17,23 @@ let pendingIceCandidates = [];
 // Logs call summary bubbles directly to chat timeline (WhatsApp style)
 const logCallToChat = ({ otherUser, callType, duration = 0, status = "completed" }) => {
   if (!otherUser?._id) return;
+  const currentSelectedUser = useChatStore.getState().selectedUser;
+  // Strictly log into chat if the currently viewed chat matches this contact
+  if (currentSelectedUser?._id !== otherUser._id) return;
+
   const authUser = useAuthStore.getState().authUser;
+  const { callDirection } = useCallStore.getState();
+  const isOutgoing = callDirection === "outgoing";
+
   const callMsg = {
     _id: `call-log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    senderId: authUser?._id,
-    receiverId: otherUser._id,
+    senderId: isOutgoing ? authUser?._id : otherUser._id,
+    receiverId: isOutgoing ? otherUser._id : authUser?._id,
     callLog: {
       callType: callType || "voice",
       duration: duration || 0,
       status: status, // "completed" | "missed" | "declined"
+      direction: isOutgoing ? "outgoing" : "incoming",
     },
     createdAt: new Date().toISOString(),
   };
@@ -81,6 +89,7 @@ const flushPendingIceCandidates = async (pc) => {
 export const useCallStore = create((set, get) => ({
   callStatus: "idle", // 'idle' | 'calling' | 'incoming' | 'connected'
   callType: "voice", // 'voice' | 'video'
+  callDirection: "outgoing", // 'outgoing' | 'incoming'
   otherUser: null,
   isMuted: false,
   isVideoOff: false,
@@ -331,6 +340,13 @@ export const useCallStore = create((set, get) => ({
 
   startCall: async ({ user, callType = "voice" }) => {
     if (!user) return;
+
+    const { callStatus } = get();
+    if (callStatus !== "idle") {
+      toast("You are already in an active call", { icon: "📞" });
+      return;
+    }
+
     const authUser = useAuthStore.getState().authUser;
     const socket = useAuthStore.getState().socket;
     const onlineUsers = useAuthStore.getState().onlineUsers || [];
@@ -378,6 +394,7 @@ export const useCallStore = create((set, get) => ({
     set({
       callStatus: "calling",
       callType: effectiveCallType,
+      callDirection: "outgoing",
       otherUser: user,
       isMuted: false,
       isVideoOff: false,
@@ -421,6 +438,7 @@ export const useCallStore = create((set, get) => ({
     set({
       callStatus: "incoming",
       callType: callType || "voice",
+      callDirection: "incoming",
       otherUser: {
         _id: from,
         fullName: callerName || "Incoming Caller",
@@ -585,6 +603,9 @@ export const useCallStore = create((set, get) => ({
       });
       const newVideoTrack = newStream.getVideoTracks()[0];
       const oldVideoTrack = localStream.getVideoTracks()[0];
+      if (newVideoTrack) {
+        newVideoTrack.enabled = !get().isVideoOff;
+      }
 
       if (peerConnection) {
         const sender = peerConnection
@@ -615,7 +636,37 @@ export const useCallStore = create((set, get) => ({
   toggleScreenShare: async () => {
     const { isScreenSharing, localStream } = get();
     if (isScreenSharing) {
-      set({ isScreenSharing: false });
+      // Revert back to webcam
+      try {
+        const camStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: get().isFrontCamera ? "user" : "environment" },
+          audio: false,
+        });
+        const camVideoTrack = camStream.getVideoTracks()[0];
+        if (peerConnection) {
+          const sender = peerConnection
+            .getSenders()
+            .find((s) => s.track && s.track.kind === "video");
+          if (sender) {
+            await sender.replaceTrack(camVideoTrack);
+          }
+        }
+        if (localStream) {
+          localStream.getVideoTracks().forEach((t) => {
+            t.stop();
+            localStream.removeTrack(t);
+          });
+          localStream.addTrack(camVideoTrack);
+        }
+        set({
+          isScreenSharing: false,
+          localStream: localStream ? new MediaStream(localStream.getTracks()) : camStream,
+        });
+        toast("Screen sharing stopped 🖥️", { icon: "ℹ️" });
+      } catch (err) {
+        console.warn("Could not revert to camera after screen share:", err);
+        set({ isScreenSharing: false });
+      }
       return;
     }
 
@@ -633,15 +684,58 @@ export const useCallStore = create((set, get) => ({
           }
         }
 
-        screenVideoTrack.onended = () => {
-          set({ isScreenSharing: false });
+        // When user stops screen sharing via browser native floating bar
+        screenVideoTrack.onended = async () => {
+          try {
+            const camStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: get().isFrontCamera ? "user" : "environment" },
+              audio: false,
+            });
+            const camVideoTrack = camStream.getVideoTracks()[0];
+            if (peerConnection) {
+              const sender = peerConnection
+                .getSenders()
+                .find((s) => s.track && s.track.kind === "video");
+              if (sender) {
+                await sender.replaceTrack(camVideoTrack);
+              }
+            }
+            const curLocal = get().localStream;
+            if (curLocal) {
+              curLocal.getVideoTracks().forEach((t) => {
+                t.stop();
+                curLocal.removeTrack(t);
+              });
+              curLocal.addTrack(camVideoTrack);
+            }
+            set({
+              isScreenSharing: false,
+              localStream: curLocal ? new MediaStream(curLocal.getTracks()) : camStream,
+            });
+            toast("Screen sharing stopped 🖥️", { icon: "ℹ️" });
+          } catch (e) {
+            set({ isScreenSharing: false });
+          }
         };
-        set({ isScreenSharing: true, localStream: screenStream });
+
+        const currentLocal = get().localStream;
+        if (currentLocal) {
+          // Preserve microphone audio tracks while replacing video track with screen video
+          currentLocal.getVideoTracks().forEach((t) => {
+            t.stop();
+            currentLocal.removeTrack(t);
+          });
+          currentLocal.addTrack(screenVideoTrack);
+          set({ isScreenSharing: true, localStream: new MediaStream(currentLocal.getTracks()) });
+        } else {
+          set({ isScreenSharing: true, localStream: screenStream });
+        }
+        toast("Sharing screen 🖥️", { icon: "📡" });
       } else {
         toast("Screen sharing is not supported in this browser", { icon: "⚠️" });
       }
     } catch {
-      // User cancelled screen share
+      // User cancelled screen share picker dialog
     }
   },
 
