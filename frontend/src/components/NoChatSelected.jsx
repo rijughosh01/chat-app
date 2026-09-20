@@ -98,10 +98,10 @@ const NoChatSelected = () => {
         </p>
       </div>
 
-      {/* End to End Encryption Footer */}
+      {/* TLS Security Footer */}
       <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-base-100/75 backdrop-blur-md border border-base-content/10 shadow-xs text-xs text-base-content/60 font-medium">
         <Lock className="size-3 text-emerald-500" />
-        <span>End-to-end encrypted</span>
+        <span>Secured with TLS in transit</span>
       </div>
     </div>
   );

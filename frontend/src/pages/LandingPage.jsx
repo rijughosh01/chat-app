@@ -207,7 +207,7 @@ const LandingPage = () => {
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-base-content/50">
                       <span className="px-2 py-0.5 rounded-full bg-base-200 text-[10px]">
-                        🔒 End-to-End Encrypted
+                        🔒 TLS Secured in Transit
                       </span>
                     </div>
                   </div>

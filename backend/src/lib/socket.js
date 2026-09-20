@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
+import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 
 const app = express();
@@ -13,6 +14,49 @@ const io = new Server(server, {
   },
   pingTimeout: 30000,
   pingInterval: 25000,
+});
+
+// Helper to parse cookies from handshake headers
+function parseCookies(cookieHeader) {
+  if (!cookieHeader || typeof cookieHeader !== "string") return {};
+  return cookieHeader.split(";").reduce((res, c) => {
+    const [key, ...val] = c.trim().split("=");
+    if (key) {
+      try {
+        res[key] = decodeURIComponent(val.join("="));
+      } catch {
+        res[key] = val.join("=");
+      }
+    }
+    return res;
+  }, {});
+}
+
+// Socket.IO authentication middleware verifying JWT token
+io.use((socket, next) => {
+  try {
+    const cookies = parseCookies(socket.handshake.headers?.cookie);
+    const token =
+      cookies.jwt ||
+      socket.handshake.auth?.token ||
+      socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, "");
+
+    if (!token) {
+      return next(new Error("Authentication error: No authentication token provided"));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded || !decoded.userId) {
+      return next(new Error("Authentication error: Invalid or expired token"));
+    }
+
+    // Set securely verified userId onto the socket object
+    socket.userId = decoded.userId.toString();
+    next();
+  } catch (err) {
+    console.error(`Socket authentication rejected (${socket.id}):`, err.message);
+    return next(new Error("Authentication error: Unauthorized"));
+  }
 });
 
 // Map of userId -> Set of socket IDs
@@ -38,8 +82,8 @@ export function getUserSocketIds(userId) {
 }
 
 io.on("connection", (socket) => {
-  const rawUserId = socket.handshake.query.userId;
-  const userId = rawUserId ? rawUserId.toString() : null;
+  // Use securely verified userId from JWT middleware instead of unverified query params
+  const userId = socket.userId;
 
   console.log(`Socket connected: ${socket.id} (User: ${userId || "Guest"})`);
 
@@ -72,6 +116,15 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", async () => {
     console.log(`Socket disconnected: ${socket.id} (User: ${userId || "Guest"})`);
+
+    // Clean up any active call if the user unexpectedly closed tab or disconnected
+    if (socket.currentCallTarget) {
+      io.to(socket.currentCallTarget).emit("call:ended", {
+        from: userId,
+        reason: "disconnected",
+      });
+      delete socket.currentCallTarget;
+    }
 
     if (userId && userSocketMap[userId]) {
       userSocketMap[userId].delete(socket.id);
@@ -119,6 +172,62 @@ io.on("connection", (socket) => {
   socket.on("stopTyping", ({ to, from }) => {
     if (to) {
       io.to(to.toString()).emit("stopTyping", { from });
+    }
+  });
+
+  // Real-time Audio / Video Calling Signaling
+  socket.on("call:initiate", ({ to, callType, callerName, callerPic }) => {
+    if (to && userId) {
+      socket.currentCallTarget = to.toString();
+      io.to(to.toString()).emit("call:incoming", {
+        from: userId,
+        callType,
+        callerName,
+        callerPic,
+        callerSocketId: socket.id,
+      });
+    }
+  });
+
+  socket.on("call:accept", ({ to, signal }) => {
+    if (to && userId) {
+      socket.currentCallTarget = to.toString();
+      io.to(to.toString()).emit("call:accepted", {
+        from: userId,
+        signal,
+      });
+      // Dismiss incoming ringing on caller's / callee's other tabs
+      socket.to(userId.toString()).emit("call:handled", { from: to });
+    }
+  });
+
+  socket.on("call:reject", ({ to, reason }) => {
+    if (to && userId) {
+      delete socket.currentCallTarget;
+      io.to(to.toString()).emit("call:rejected", {
+        from: userId,
+        reason: reason || "declined",
+      });
+      // Dismiss incoming ringing on other tabs
+      socket.to(userId.toString()).emit("call:handled", { from: to });
+    }
+  });
+
+  socket.on("call:end", ({ to }) => {
+    delete socket.currentCallTarget;
+    if (to && userId) {
+      io.to(to.toString()).emit("call:ended", {
+        from: userId,
+      });
+    }
+  });
+
+  socket.on("call:signal", ({ to, signal }) => {
+    if (to && userId) {
+      io.to(to.toString()).emit("call:signal", {
+        from: userId,
+        signal,
+      });
     }
   });
 });

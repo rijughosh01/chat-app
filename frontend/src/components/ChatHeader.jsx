@@ -12,9 +12,12 @@ import {
   Timer,
   MoreVertical,
   User,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
+import { useCallStore } from "../store/useCallStore";
 import { useThemeStore, WALLPAPER_OPTIONS } from "../store/useThemeStore";
 import { formatLastSeen } from "../lib/utils";
 import UserProfileDrawer from "./UserProfileDrawer";
@@ -55,10 +58,39 @@ const ChatHeader = () => {
     typingUsers,
     disappearingTimer,
     setDisappearingTimer,
+    messages,
+    isSearchOpen,
+    setIsSearchOpen,
+    searchQuery,
+    setSearchQuery,
+    activeSearchMatchIndex,
+    setActiveSearchMatchIndex,
   } = useChatStore();
+  const { startCall } = useCallStore();
   const { onlineUsers } = useAuthStore();
   const { wallpaper, setWallpaper, wallpaperDoodle, toggleWallpaperDoodle } =
     useThemeStore();
+
+  const searchMatches = searchQuery.trim()
+    ? messages.filter((m) =>
+        m.text?.toLowerCase().includes(searchQuery.trim().toLowerCase())
+      )
+    : [];
+  const totalMatches = searchMatches.length;
+
+  const handlePrevMatch = () => {
+    if (totalMatches === 0) return;
+    const newIndex =
+      activeSearchMatchIndex > 0 ? activeSearchMatchIndex - 1 : totalMatches - 1;
+    setActiveSearchMatchIndex(newIndex);
+  };
+
+  const handleNextMatch = () => {
+    if (totalMatches === 0) return;
+    const newIndex =
+      activeSearchMatchIndex < totalMatches - 1 ? activeSearchMatchIndex + 1 : 0;
+    setActiveSearchMatchIndex(newIndex);
+  };
 
   const handleSelectDisappearingOption = (id) => {
     setDisappearingTimer(id);
@@ -81,112 +113,175 @@ const ChatHeader = () => {
   const isTyping = Boolean(selectedUser?._id && typingUsers.includes(selectedUser._id));
 
   return (
-    <div className="px-2.5 sm:px-4 py-2 border-b border-base-content/10 bg-base-100/90 backdrop-blur-xl flex items-center justify-between z-20 flex-shrink-0 shadow-xs">
-      {/* Left side: Back Button + Avatar + Contact Info */}
-      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 mr-1">
-        {/* Mobile Back Button */}
-        <button
-          type="button"
-          onClick={() => setSelectedUser(null)}
-          className="md:hidden size-8 -ml-1 flex items-center justify-center rounded-full hover:bg-base-200 text-base-content/80 active:scale-90 transition-all cursor-pointer flex-shrink-0"
-          title="Back to chats"
-        >
-          <ArrowLeft size={19} className="stroke-[2.5]" />
-        </button>
-
-        {/* Clickable Avatar & User Details */}
-        <div
-          onClick={() => setIsProfileDrawerOpen(true)}
-          className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 cursor-pointer group/user select-none"
-          title="Click to view contact info & bio"
-        >
-          {/* Avatar with live online dot */}
-          <div className="relative flex-shrink-0 group-hover/user:scale-103 transition-transform">
-            {selectedUser?.profilePic ? (
-              <img
-                src={selectedUser.profilePic}
-                alt={selectedUser.fullName}
-                className="size-9 sm:size-10 rounded-2xl object-cover ring-1 ring-base-content/10 shadow-xs"
-              />
-            ) : (
-              <div className="size-9 sm:size-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                {getInitials(selectedUser?.fullName)}
-              </div>
-            )}
-            {isOnline && (
-              <span className="absolute bottom-0 right-0 size-2.5 sm:size-3 bg-emerald-500 rounded-full ring-2 ring-base-100 shadow-xs" />
+    <div className="px-2.5 sm:px-4 py-2 border-b border-base-content/10 bg-base-100/90 backdrop-blur-xl flex items-center justify-between z-20 flex-shrink-0 shadow-xs min-h-[57px]">
+      {isSearchOpen ? (
+        <div className="flex items-center gap-2 w-full animate-in fade-in duration-150">
+          <div className="relative flex-1 flex items-center">
+            <Search size={16} className="absolute left-3 text-base-content/50 pointer-events-none" />
+            <input
+              type="text"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (e.shiftKey) handlePrevMatch();
+                  else handleNextMatch();
+                } else if (e.key === "Escape") {
+                  setIsSearchOpen(false);
+                }
+              }}
+              placeholder="Search in conversation..."
+              className="w-full bg-base-200/70 focus:bg-base-200 pl-9 pr-24 py-1.5 rounded-xl text-xs sm:text-sm text-base-content placeholder:text-base-content/40 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 border border-base-content/10 transition-all"
+            />
+            {searchQuery.trim() && (
+              <span className="absolute right-3 text-[11px] text-base-content/60 font-semibold select-none">
+                {totalMatches > 0
+                  ? `${activeSearchMatchIndex + 1} of ${totalMatches}`
+                  : "0 matches"}
+              </span>
             )}
           </div>
 
-          {/* User Details & Live Status */}
-          <div className="flex flex-col min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <h3 className="font-bold text-sm sm:text-base leading-tight text-base-content truncate group-hover/user:text-emerald-500 transition-colors">
-                {selectedUser?.fullName}
-              </h3>
-              {disappearingTimer > 0 && (
-                <span
-                  className="hidden sm:inline-flex items-center gap-0.5 text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded-full border border-amber-500/25 flex-shrink-0"
-                  title={`Disappearing messages enabled: ${formatTimerLabel(disappearingTimer)}`}
-                >
-                  <Timer size={10} className="stroke-[2.5]" />
-                  {formatTimerLabel(disappearingTimer)}
-                </span>
-              )}
-            </div>
-            <div className="text-[11px] sm:text-xs truncate flex items-center gap-1.5 min-h-[16px] text-base-content/60 font-medium">
-              {isTyping ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 truncate">
-                  <span>typing</span>
-                  <span className="inline-flex items-center gap-0.5 pt-0.5">
-                    <span className="size-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="size-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="size-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </span>
-                </span>
-              ) : isOnline ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                  online
-                </span>
-              ) : canShowStatus && selectedUser?.lastSeen ? (
-                <span className="text-base-content/60 font-medium truncate">
-                  {formatLastSeen(selectedUser.lastSeen)}
-                </span>
-              ) : (
-                <span className="text-base-content/40 font-medium">offline</span>
-              )}
-            </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              type="button"
+              disabled={totalMatches === 0}
+              onClick={handlePrevMatch}
+              className="size-8 rounded-lg flex items-center justify-center hover:bg-base-200 text-base-content/70 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+              title="Previous match (Shift+Enter)"
+            >
+              <ChevronUp size={16} />
+            </button>
+            <button
+              type="button"
+              disabled={totalMatches === 0}
+              onClick={handleNextMatch}
+              className="size-8 rounded-lg flex items-center justify-center hover:bg-base-200 text-base-content/70 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+              title="Next match (Enter)"
+            >
+              <ChevronDown size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(false)}
+              className="size-8 rounded-lg flex items-center justify-center hover:bg-base-200 text-base-content/70 hover:text-base-content active:scale-95 transition-all cursor-pointer"
+              title="Close search (Esc)"
+            >
+              <X size={16} />
+            </button>
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Left side: Back Button + Avatar + Contact Info */}
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 mr-1">
+            {/* Mobile Back Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedUser(null)}
+              className="md:hidden size-8 -ml-1 flex items-center justify-center rounded-full hover:bg-base-200 text-base-content/80 active:scale-90 transition-all cursor-pointer flex-shrink-0"
+              title="Back to chats"
+            >
+              <ArrowLeft size={19} className="stroke-[2.5]" />
+            </button>
 
-      {/* Right Action Icons */}
-      <div className="flex items-center gap-1 sm:gap-2.5 text-base-content/70 flex-shrink-0">
-        <button
-          type="button"
-          className="size-8 sm:size-9 flex items-center justify-center rounded-full hover:bg-base-200 text-base-content/70 hover:text-emerald-600 active:scale-90 transition-all cursor-pointer"
-          title="Voice Call"
-        >
-          <Phone size={18} />
-        </button>
+            {/* Clickable Avatar & User Details */}
+            <div
+              onClick={() => setIsProfileDrawerOpen(true)}
+              className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 cursor-pointer group/user select-none"
+              title="Click to view contact info & bio"
+            >
+              {/* Avatar with live online dot */}
+              <div className="relative flex-shrink-0 group-hover/user:scale-103 transition-transform">
+                {selectedUser?.profilePic ? (
+                  <img
+                    src={selectedUser.profilePic}
+                    alt={selectedUser.fullName}
+                    className="size-9 sm:size-10 rounded-2xl object-cover ring-1 ring-base-content/10 shadow-xs"
+                  />
+                ) : (
+                  <div className="size-9 sm:size-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                    {getInitials(selectedUser?.fullName)}
+                  </div>
+                )}
+                {isOnline && (
+                  <span className="absolute bottom-0 right-0 size-2.5 sm:size-3 bg-emerald-500 rounded-full ring-2 ring-base-100 shadow-xs" />
+                )}
+              </div>
 
-        <button
-          type="button"
-          className="size-8 sm:size-9 flex items-center justify-center rounded-full hover:bg-base-200 text-base-content/70 hover:text-emerald-600 active:scale-90 transition-all cursor-pointer"
-          title="Video Call"
-        >
-          <Video size={19} />
-        </button>
+              {/* User Details & Live Status */}
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h3 className="font-bold text-sm sm:text-base leading-tight text-base-content truncate group-hover/user:text-emerald-500 transition-colors">
+                    {selectedUser?.fullName}
+                  </h3>
+                  {disappearingTimer > 0 && (
+                    <span
+                      className="hidden sm:inline-flex items-center gap-0.5 text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded-full border border-amber-500/25 flex-shrink-0"
+                      title={`Disappearing messages enabled: ${formatTimerLabel(disappearingTimer)}`}
+                    >
+                      <Timer size={10} className="stroke-[2.5]" />
+                      {formatTimerLabel(disappearingTimer)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] sm:text-xs truncate flex items-center gap-1.5 min-h-[16px] text-base-content/60 font-medium">
+                  {isTyping ? (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 truncate">
+                      <span>typing</span>
+                      <span className="inline-flex items-center gap-0.5 pt-0.5">
+                        <span className="size-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="size-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="size-1 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </span>
+                    </span>
+                  ) : isOnline ? (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                      online
+                    </span>
+                  ) : canShowStatus && selectedUser?.lastSeen ? (
+                    <span className="text-base-content/60 font-medium truncate">
+                      {formatLastSeen(selectedUser.lastSeen)}
+                    </span>
+                  ) : (
+                    <span className="text-base-content/40 font-medium">offline</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
-        {/* Desktop Search Button */}
-        <button
-          type="button"
-          className="hidden md:flex size-9 items-center justify-center rounded-full hover:bg-base-200 text-base-content/70 hover:text-base-content active:scale-90 transition-all cursor-pointer"
-          title="Search in chat"
-        >
-          <Search size={18} />
-        </button>
+          {/* Right Action Icons */}
+          <div className="flex items-center gap-1 sm:gap-2.5 text-base-content/70 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => startCall({ user: selectedUser, callType: "voice" })}
+              className="size-8 sm:size-9 flex items-center justify-center rounded-full hover:bg-base-200 text-base-content/70 hover:text-emerald-600 active:scale-90 transition-all cursor-pointer"
+              title="Voice Call"
+            >
+              <Phone size={18} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => startCall({ user: selectedUser, callType: "video" })}
+              className="size-8 sm:size-9 flex items-center justify-center rounded-full hover:bg-base-200 text-base-content/70 hover:text-emerald-600 active:scale-90 transition-all cursor-pointer"
+              title="Video Call"
+            >
+              <Video size={19} />
+            </button>
+
+            {/* Desktop Search Button */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="hidden md:flex size-9 items-center justify-center rounded-full hover:bg-base-200 text-base-content/70 hover:text-base-content active:scale-90 transition-all cursor-pointer"
+              title="Search in chat"
+            >
+              <Search size={18} />
+            </button>
 
         {/* Desktop Disappearing Messages Dropdown */}
         <div className="hidden sm:block dropdown dropdown-end">
@@ -333,6 +428,51 @@ const ChatHeader = () => {
               <button
                 type="button"
                 onClick={() => {
+                  startCall({ user: selectedUser, callType: "voice" });
+                  if (document.activeElement && typeof document.activeElement.blur === "function") {
+                    document.activeElement.blur();
+                  }
+                }}
+                className="w-full flex items-center gap-2.5 py-2 px-3 rounded-xl font-medium text-base-content hover:bg-base-200 transition-colors"
+              >
+                <Phone size={16} className="text-emerald-500" />
+                <span>Voice call</span>
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  startCall({ user: selectedUser, callType: "video" });
+                  if (document.activeElement && typeof document.activeElement.blur === "function") {
+                    document.activeElement.blur();
+                  }
+                }}
+                className="w-full flex items-center gap-2.5 py-2 px-3 rounded-xl font-medium text-base-content hover:bg-base-200 transition-colors"
+              >
+                <Video size={16} className="text-emerald-500" />
+                <span>Video call</span>
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(true);
+                  if (document.activeElement && typeof document.activeElement.blur === "function") {
+                    document.activeElement.blur();
+                  }
+                }}
+                className="w-full flex items-center gap-2.5 py-2 px-3 rounded-xl font-medium text-base-content hover:bg-base-200 transition-colors"
+              >
+                <Search size={16} className="text-emerald-500" />
+                <span>Search in chat</span>
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => {
                   setIsProfileDrawerOpen(true);
                   if (document.activeElement && typeof document.activeElement.blur === "function") {
                     document.activeElement.blur();
@@ -394,6 +534,8 @@ const ChatHeader = () => {
           <X size={18} />
         </button>
       </div>
+      </>
+    )}
 
       {/* Mobile Disappearing Messages Bottom Sheet Modal (Portaled) */}
       {showMobileTimerModal &&

@@ -29,7 +29,26 @@ import { useThemeStore } from "../store/useThemeStore";
 import { formatMessageTime, formatDateDivider } from "../lib/utils";
 import { addStickerToRecents } from "./StickerPicker";
 
-function renderTextWithLinks(text) {
+function highlightSearchMatch(text, query) {
+  if (!query || !query.trim() || !text) return text;
+  const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const subparts = text.split(regex);
+  return subparts.map((sub, i) =>
+    regex.test(sub) ? (
+      <mark
+        key={i}
+        className="bg-amber-400 text-neutral-900 font-semibold rounded-xs px-0.5 shadow-2xs"
+      >
+        {sub}
+      </mark>
+    ) : (
+      sub
+    )
+  );
+}
+
+function renderTextWithLinks(text, searchQuery = "") {
   if (!text) return null;
   const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
   const parts = text.split(urlRegex);
@@ -51,7 +70,7 @@ function renderTextWithLinks(text) {
         </a>
       );
     }
-    return part;
+    return highlightSearchMatch(part, searchQuery);
   });
 }
 
@@ -76,9 +95,20 @@ const ChatContainer = () => {
     loadMoreMessages,
     disappearingTimer,
     setDisappearingTimer,
+    isSearchOpen,
+    searchQuery,
+    activeSearchMatchIndex,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const { wallpaper, wallpaperDoodle } = useThemeStore();
+
+  const searchMatches = searchQuery.trim()
+    ? messages.filter((m) =>
+        m.text?.toLowerCase().includes(searchQuery.trim().toLowerCase())
+      )
+    : [];
+  const activeMatchMessageId =
+    searchMatches[activeSearchMatchIndex]?._id || null;
   const messageEndRef = useRef(null);
   const chatScrollContainerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
@@ -132,6 +162,14 @@ const ChatContainer = () => {
       lastMessageIdRef.current = lastMessage?._id;
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (!isSearchOpen || !activeMatchMessageId) return;
+    const el = document.getElementById(`msg-${activeMatchMessageId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [isSearchOpen, activeMatchMessageId]);
 
   const handleScroll = async () => {
     const container = chatScrollContainerRef.current;
@@ -399,11 +437,11 @@ const ChatContainer = () => {
             </div>
           )}
 
-          {/* End-to-End Encryption Notice Banner */}
+          {/* In-Transit TLS & Data Security Notice Banner */}
           <div className="flex justify-center my-2.5 select-none">
             <div className="wa-security-pill text-[11px] sm:text-[11.5px] px-3.5 sm:px-4 py-1.5 rounded-lg flex items-center gap-2 max-w-md text-center shadow-xs">
               <Lock size={12} className="flex-shrink-0 text-amber-600 dark:text-amber-400" />
-              <span>Messages are end-to-end encrypted. No one outside of this chat can read them.</span>
+              <span>Messages are secured in transit with TLS and password hashing.</span>
             </div>
           </div>
 
@@ -509,6 +547,11 @@ const ChatContainer = () => {
                               ? "wa-bubble-outgoing rounded-2xl rounded-tr-xs"
                               : "wa-bubble-incoming rounded-2xl rounded-tl-xs"
                           }`
+                    }
+                    ${
+                      activeMatchMessageId === message._id
+                        ? "ring-2 ring-amber-500 shadow-xl scale-[1.01]"
+                        : ""
                     }
                   `}
                 >
@@ -838,7 +881,7 @@ const ChatContainer = () => {
                         <div className="flex flex-wrap items-end justify-end gap-x-2.5 gap-y-1">
                           {message.text && (
                             <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words flex-1 min-w-[70px] font-normal">
-                              {renderTextWithLinks(message.text)}
+                              {renderTextWithLinks(message.text, searchQuery)}
                             </p>
                           )}
 

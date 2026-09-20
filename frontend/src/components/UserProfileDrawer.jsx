@@ -17,6 +17,7 @@ import {
 import toast from "react-hot-toast";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
+import { useCallStore } from "../store/useCallStore";
 import { formatLastSeen } from "../lib/utils";
 import ImageModal from "./ImageModal";
 
@@ -47,6 +48,7 @@ function formatJoinDate(dateStr) {
 const UserProfileDrawer = ({ isOpen, onClose, user }) => {
   const { onlineUsers } = useAuthStore();
   const { messages, disappearingTimer } = useChatStore();
+  const { startCall } = useCallStore();
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -186,8 +188,11 @@ const UserProfileDrawer = ({ isOpen, onClose, user }) => {
             <div className="flex items-center gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => toast("Voice call feature coming soon! 📞")}
-                className="flex flex-col items-center gap-1 p-2.5 rounded-2xl bg-base-200/80 hover:bg-base-200 text-base-content/80 hover:text-emerald-600 active:scale-95 transition-all text-xs font-semibold"
+                onClick={() => {
+                  startCall({ user, callType: "voice" });
+                  onClose();
+                }}
+                className="flex flex-col items-center gap-1 p-2.5 rounded-2xl bg-base-200/80 hover:bg-base-200 text-base-content/80 hover:text-emerald-600 active:scale-95 transition-all text-xs font-semibold cursor-pointer"
                 title="Voice Call"
               >
                 <div className="size-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
@@ -198,8 +203,11 @@ const UserProfileDrawer = ({ isOpen, onClose, user }) => {
 
               <button
                 type="button"
-                onClick={() => toast("Video call feature coming soon! 📹")}
-                className="flex flex-col items-center gap-1 p-2.5 rounded-2xl bg-base-200/80 hover:bg-base-200 text-base-content/80 hover:text-emerald-600 active:scale-95 transition-all text-xs font-semibold"
+                onClick={() => {
+                  startCall({ user, callType: "video" });
+                  onClose();
+                }}
+                className="flex flex-col items-center gap-1 p-2.5 rounded-2xl bg-base-200/80 hover:bg-base-200 text-base-content/80 hover:text-emerald-600 active:scale-95 transition-all text-xs font-semibold cursor-pointer"
                 title="Video Call"
               >
                 <div className="size-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
@@ -297,9 +305,9 @@ const UserProfileDrawer = ({ isOpen, onClose, user }) => {
                 <ShieldCheck size={16} />
               </div>
               <div className="flex flex-col">
-                <span className="font-semibold text-base-content">End-to-End Encryption</span>
+                <span className="font-semibold text-base-content">Encryption & Privacy</span>
                 <span className="text-[11px] text-base-content/55">
-                  Messages and calls are secured with end-to-end encryption.
+                  Messages are secured in transit with TLS encryption and account protection.
                 </span>
               </div>
             </div>

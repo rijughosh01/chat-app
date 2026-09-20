@@ -1,6 +1,7 @@
 import Navbar from "./components/Navbar";
 import MobileBottomNav from "./components/MobileBottomNav";
 import OfflineBanner from "./components/OfflineBanner";
+import CallModal from "./components/CallModal";
 
 import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
@@ -69,6 +70,7 @@ const App = () => {
       </Routes>
 
       <MobileBottomNav />
+      <CallModal />
       <Toaster />
     </div>
   );
