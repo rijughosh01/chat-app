@@ -15,6 +15,10 @@ import {
   ChevronDown,
   Heart,
   Timer,
+  Phone,
+  PhoneIncoming,
+  PhoneMissed,
+  Video,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -26,6 +30,7 @@ import AudioMessagePlayer from "./AudioMessagePlayer";
 import LinkPreviewCard from "./LinkPreviewCard";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
+import { useCallStore } from "../store/useCallStore";
 import { formatMessageTime, formatDateDivider } from "../lib/utils";
 import { addStickerToRecents } from "./StickerPicker";
 
@@ -100,6 +105,7 @@ const ChatContainer = () => {
     activeSearchMatchIndex,
   } = useChatStore();
   const { authUser } = useAuthStore();
+  const { startCall } = useCallStore();
   const { wallpaper, wallpaperDoodle } = useThemeStore();
 
   const searchMatches = searchQuery.trim()
@@ -780,6 +786,63 @@ const ChatContainer = () => {
                     </form>
                   ) : (
                     <>
+                      {/* Call History Card (WhatsApp Style) */}
+                      {message.callLog && (
+                        <div className="flex items-center gap-3 py-1 pr-1 select-none min-w-[190px]">
+                          <div
+                            className={`size-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              message.callLog.status === "missed"
+                                ? "bg-rose-500/15 text-rose-500 ring-1 ring-rose-500/30"
+                                : "bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30"
+                            }`}
+                          >
+                            {message.callLog.status === "missed" ? (
+                              <PhoneMissed size={19} />
+                            ) : message.callLog.callType === "video" ? (
+                              <Video size={19} />
+                            ) : (
+                              <PhoneIncoming size={19} />
+                            )}
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1 text-left">
+                            <span
+                              className={`text-xs font-bold leading-tight ${
+                                message.callLog.status === "missed"
+                                  ? "text-rose-500"
+                                  : "text-base-content"
+                              }`}
+                            >
+                              {message.callLog.status === "missed"
+                                ? `Missed ${message.callLog.callType || "voice"} call`
+                                : `${message.callLog.callType === "video" ? "Video" : "Voice"} call`}
+                            </span>
+                            <span className="text-[10px] text-base-content/60 font-medium">
+                              {message.callLog.status === "missed"
+                                ? "Tap to call back"
+                                : `${Math.floor(message.callLog.duration / 60)}m ${message.callLog.duration % 60}s · Completed`}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startCall({
+                                user: selectedUser,
+                                callType: message.callLog.callType || "voice",
+                              });
+                            }}
+                            className="size-8 rounded-full bg-emerald-500/15 hover:bg-emerald-500 text-emerald-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-90"
+                            title="Call back"
+                          >
+                            {message.callLog.callType === "video" ? (
+                              <Video size={14} />
+                            ) : (
+                              <Phone size={14} />
+                            )}
+                          </button>
+                        </div>
+                      )}
+
                       {/* Attached Image with Lightbox Trigger */}
                       {message.image && (
                         <div

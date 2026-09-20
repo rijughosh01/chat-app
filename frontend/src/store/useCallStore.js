@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
+import { useChatStore } from "./useChatStore";
 import {
   startRingtone,
   stopRingtone,
@@ -12,6 +13,28 @@ let durationTimer = null;
 let callTimeoutTimer = null;
 let peerConnection = null;
 let pendingIceCandidates = [];
+
+// Logs call summary bubbles directly to chat timeline (WhatsApp style)
+const logCallToChat = ({ otherUser, callType, duration = 0, status = "completed" }) => {
+  if (!otherUser?._id) return;
+  const authUser = useAuthStore.getState().authUser;
+  const callMsg = {
+    _id: `call-log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    senderId: authUser?._id,
+    receiverId: otherUser._id,
+    callLog: {
+      callType: callType || "voice",
+      duration: duration || 0,
+      status: status, // "completed" | "missed" | "declined"
+    },
+    createdAt: new Date().toISOString(),
+  };
+
+  useChatStore.setState((state) => {
+    const existing = state.messages || [];
+    return { messages: [...existing, callMsg] };
+  });
+};
 
 // Redundant multi-STUN server list for reliable NAT traversal across mobile & Wi-Fi networks
 const RTC_CONFIG = {
@@ -215,6 +238,9 @@ export const useCallStore = create((set, get) => ({
     });
 
     socket.on("call:rejected", ({ reason }) => {
+      const { otherUser, callType } = get();
+      logCallToChat({ otherUser, callType, duration: 0, status: "missed" });
+
       clearCallTimeout();
       stopRingtone();
       playCallEndTone();
@@ -241,6 +267,14 @@ export const useCallStore = create((set, get) => ({
     });
 
     socket.on("call:ended", ({ reason }) => {
+      const { otherUser, callType, callDuration } = get();
+      logCallToChat({
+        otherUser,
+        callType,
+        duration: callDuration,
+        status: callDuration > 0 ? "completed" : "missed",
+      });
+
       clearCallTimeout();
       stopRingtone();
       playCallEndTone();
@@ -454,7 +488,9 @@ export const useCallStore = create((set, get) => ({
   },
 
   rejectCall: (reason = "declined") => {
-    const { otherUser } = get();
+    const { otherUser, callType } = get();
+    logCallToChat({ otherUser, callType, duration: 0, status: "missed" });
+
     const socket = useAuthStore.getState().socket;
     clearCallTimeout();
     stopRingtone();
@@ -478,7 +514,14 @@ export const useCallStore = create((set, get) => ({
   },
 
   endCall: () => {
-    const { otherUser, callDuration } = get();
+    const { otherUser, callType, callDuration } = get();
+    logCallToChat({
+      otherUser,
+      callType,
+      duration: callDuration,
+      status: callDuration > 0 ? "completed" : "missed",
+    });
+
     const socket = useAuthStore.getState().socket;
     clearCallTimeout();
     stopRingtone();
